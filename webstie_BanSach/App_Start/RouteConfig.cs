@@ -16,7 +16,7 @@ namespace webstie_BanSach
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
-                defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
+                defaults: new { controller = "Book", action = "_bookListContent", id = UrlParameter.Optional }
             );
         }
     }

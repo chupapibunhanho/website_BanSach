@@ -18,7 +18,7 @@
           const d = Object.getOwnPropertyDescriptor(e, k);
           Object.defineProperty(n, k, d.get ? d : {
             enumerable: true,
-            get: () => e[k]
+            get : () => e[k]
           });
         }
       }

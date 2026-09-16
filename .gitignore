@@ -1,0 +1,7 @@
+webstie_BanSach/.vs/
+**/.vs/
+**/.vs/
+**/bin/
+**/obj/
+*.suo
+*.user
