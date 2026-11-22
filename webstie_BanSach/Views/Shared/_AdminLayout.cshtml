@@ -73,7 +73,7 @@
             <!--begin::Sidebar Brand-->
             <div class="sidebar-brand">
                 <!--begin::Brand Link-->
-                <a href="~/Dashboard/Dashboard" class="brand-link">
+                <a href="@Url.Action("Dashboard","Dashboard")" class="brand-link">
                     <!--begin::Brand Text-->
                     <span class="brand-text" style="font-weight:700; font-size:24px;">Bookstore</span>
                     <!--end::Brand Text-->
@@ -92,7 +92,7 @@
                         data-accordion="false"
                         id="navigation">
                         <li class="nav-item">
-                            <a href="~/Dashboard/Dashboard" class="nav-link">
+                            <a href="@Url.Action("Dashboard","Dashboard")" class="nav-link">
                                 <i class="nav-icon bi bi-speedometer"></i>
                                 <p>Dashboard</p>
                             </a>
