@@ -1,0 +1,44 @@
+﻿@{
+    ViewBag.Title = "Danh sách tác giả";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="app-content-header"><div class="container-fluid"><div class="row">
+    <div class="col-sm-6"><h3 class="mb-0">Danh sách tác giả</h3></div>
+    <div class="col-sm-6 text-end"><a href="@Url.Action("AddAuthor","AuthorMgmt")" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm tác giả</a></div>
+</div></div></div>
+<div class="app-content"><div class="container-fluid"><div class="card"><div class="card-body">
+    <div class="row g-2 mb-3">
+        <div class="col-md-5"><input id="txtKeyword" type="text" class="form-control" placeholder="Tìm theo tên tác giả..." /></div>
+        <div class="col-md-3"><select id="ddlStatus" class="form-select"><option value="active">Đang hoạt động</option><option value="deleted">Đã xóa</option><option value="all">Tất cả</option></select></div>
+        <div class="col-md-4 d-flex gap-2"><button id="btnSearch" class="btn btn-primary" type="button">Tìm kiếm</button><button id="btnReset" class="btn btn-outline-secondary" type="button">Làm mới</button></div>
+    </div>
+    <div class="table-responsive"><table class="table table-bordered table-hover align-middle"><thead><tr>
+        <th style="width:70px;">ID</th><th>Tên tác giả</th><th style="width:130px;">Trạng thái</th><th style="width:170px;">Cập nhật</th><th style="width:160px;">Thao tác</th>
+    </tr></thead><tbody id="tblBody"><tr><td colspan="5" class="text-center text-muted">Đang tải dữ liệu...</td></tr></tbody></table></div>
+    <div class="d-flex justify-content-between align-items-center mt-3"><div id="pagingInfo" class="text-muted small"></div><nav><ul class="pagination mb-0" id="pagination"></ul></nav></div>
+</div></div></div></div>
+@section scripts {
+<script>
+(function(){
+    var currentPage=1;
+    function esc(t){return $('<div/>').text(t==null?'':t).html();}
+    function loadData(page){
+        currentPage=page||1;
+        $('#tblBody').html('<tr><td colspan="5" class="text-center text-muted">Đang tải dữ liệu...</td></tr>');
+        $.ajax({url:'@Url.Action("GetAuthorList","AuthorMgmt")',type:'POST',data:{keyword:$('#txtKeyword').val(),status:$('#ddlStatus').val(),page:currentPage},
+            success:function(res){ console.log('[AuthorMgmt] GetAuthorList response:',res);
+                if(!res||res.ErrCode!==1||!res.Data){ var e=(res&&res.ErrDesc?res.ErrDesc:'Không thể tải dữ liệu')+(res&&res.ErrCode!==undefined?' [ErrCode: '+res.ErrCode+']':''); $('#tblBody').html('<tr><td colspan="5" class="text-center text-danger">'+esc(e)+'</td></tr>'); $('#pagination').empty(); $('#pagingInfo').text(''); return; }
+                render(res.Data.Items||[]); renderPaging(res.Data);
+            },
+            error:function(xhr,s,e){ console.error('[AuthorMgmt] GetAuthorList error:',{status:s,error:e,httpStatus:xhr.status,responseText:xhr.responseText}); $('#tblBody').html('<tr><td colspan="5" class="text-center text-danger">Có lỗi xảy ra [HTTP '+xhr.status+' '+e+']</td></tr>'); $('#pagination').empty(); $('#pagingInfo').text(''); }
+        });
+    }
+    function render(items){ if(!items.length){$('#tblBody').html('<tr><td colspan="5" class="text-center text-muted">Không có dữ liệu.</td></tr>');return;} var rows=[]; $.each(items,function(_,it){ var badge=it.IsDeleted?'<span class="badge text-bg-secondary">Đã xóa</span>':'<span class="badge text-bg-success">Hoạt động</span>'; var del=it.IsDeleted?'':'<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="'+it.AuthorId+'" data-name="'+esc(it.AuthorName)+'">Xóa</button>'; rows.push('<tr><td>'+it.AuthorId+'</td><td>'+esc(it.AuthorName)+'</td><td>'+badge+'</td><td>'+esc(it.UpdatedAtUtc)+'</td><td><a class="btn btn-sm btn-outline-primary me-1" href="@Url.Action("UpdateAuthor","AuthorMgmt")?id='+it.AuthorId+'">Sửa</a>'+del+'</td></tr>'); }); $('#tblBody').html(rows.join('')); }
+    function renderPaging(d){ var t=d.TotalRecords||0,c=d.CurrentPage||1,tp=d.TotalPages||1; $('#pagingInfo').text('Tổng: '+t+' tác giả | Trang '+c+'/'+tp); var h=[]; h.push('<li class="page-item'+(c<=1?' disabled':'')+'"><a class="page-link" href="#" data-page="'+(c-1)+'">Trước</a></li>'); for(var i=Math.max(1,c-2);i<=Math.min(tp,c+2);i++){h.push('<li class="page-item'+(i===c?' active':'')+'"><a class="page-link" href="#" data-page="'+i+'">'+i+'</a></li>');} h.push('<li class="page-item'+(c>=tp?' disabled':'')+'"><a class="page-link" href="#" data-page="'+(c+1)+'">Sau</a></li>'); $('#pagination').html(h.join('')); }
+    $('#btnSearch').on('click',function(){loadData(1);}); $('#btnReset').on('click',function(){$('#txtKeyword').val('');$('#ddlStatus').val('active');loadData(1);}); $('#txtKeyword').on('keypress',function(e){if(e.which===13)loadData(1);}); $('#ddlStatus').on('change',function(){loadData(1);});
+    $('#pagination').on('click','a.page-link',function(e){e.preventDefault();var p=parseInt($(this).data('page'),10); if(p>0)loadData(p);});
+    $('#tblBody').on('click','.btn-delete',function(){ var id=$(this).data('id'),name=$(this).data('name'); if(!confirm('Bạn có chắc muốn xóa tác giả "'+name+'"?'))return; $.ajax({url:'@Url.Action("Delete","AuthorMgmt")',type:'POST',data:{id:id},success:function(res){ console.log('[AuthorMgmt] Delete response:',res); if(res&&res.ErrCode===1){showToast(res.ErrDesc||'Xóa thành công','success');loadData(currentPage);}else{showToast((res&&res.ErrDesc?res.ErrDesc:'Xóa thất bại')+(res&&res.ErrCode!==undefined?' [ErrCode: '+res.ErrCode+']':''),'error');}},error:function(xhr,s,e){console.error('[AuthorMgmt] Delete error:',xhr.responseText); showToast('Lỗi xóa [HTTP '+xhr.status+']','error');}}); });
+    loadData(1);
+})();
+</script>
+}
