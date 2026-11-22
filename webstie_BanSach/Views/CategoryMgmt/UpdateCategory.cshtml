@@ -30,9 +30,12 @@
                         <label for="txtCategoryName" class="form-label">Tên danh mục <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="txtCategoryName" maxlength="128" />
                     </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="chkIsDeleted">
-                        <label class="form-check-label" for="chkIsDeleted">Đánh dấu đã xóa (soft delete)</label>
+                    <div class="mb-3">
+                        <label for="ddlStatus" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="ddlStatus">
+                            <option value="active">Hoạt động</option>
+                            <option value="deleted">Đã xóa</option>
+                        </select>
                     </div>
 
                     <button type="submit" class="btn btn-primary" id="btnSave">Cập nhật</button>
@@ -62,7 +65,7 @@
                     if (res && res.ErrCode === 1 && res.Data) {
                         $('#txtCategoryCode').val(res.Data.CategoryCode || '');
                         $('#txtCategoryName').val(res.Data.Name || '');
-                        $('#chkIsDeleted').prop('checked', !!res.Data.IsDeleted);
+                        $('#ddlStatus').val(res.Data.IsDeleted ? 'deleted' : 'active');
                     } else {
                         var errText = (res && res.ErrDesc ? res.ErrDesc : 'Không thể tải thông tin danh mục')
                             + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
@@ -80,7 +83,7 @@
             e.preventDefault();
             var code = $.trim($('#txtCategoryCode').val());
             var name = $.trim($('#txtCategoryName').val());
-            var isDeleted = $('#chkIsDeleted').is(':checked');
+            var isDeleted = $('#ddlStatus').val() === 'deleted';
 
             if (!categoryId || !code || !name) {
                 showToast('Vui lòng nhập đầy đủ thông tin danh mục', 'error');

@@ -13,6 +13,7 @@ namespace webstie_BanSach.Business
         {
             public long BookId { get; set; }
             public string ISBN13 { get; set; }
+            public string CoverUrl { get; set; }
             public string Title { get; set; }
             public string CategoryName { get; set; }
             public string PublisherName { get; set; }
@@ -141,6 +142,7 @@ namespace webstie_BanSach.Business
                         {
                             BookId = x.B.BookId,
                             ISBN13 = x.B.ISBN13,
+                            CoverUrl = x.B.CoverUrl,
                             Title = x.B.Title,
                             CategoryName = x.CategoryName,
                             PublisherName = x.PublisherName,
@@ -156,6 +158,7 @@ namespace webstie_BanSach.Business
                     {
                         BookId = x.BookId,
                         ISBN13 = x.ISBN13,
+                        CoverUrl = x.CoverUrl,
                         Title = x.Title,
                         CategoryName = x.CategoryName ?? "",
                         PublisherName = x.PublisherName ?? "",

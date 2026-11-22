@@ -48,6 +48,7 @@
                             <tr>
                                 <th class="sortable" data-sort="BookId">ID <span class="sort-indicator"></span></th>
                                 <th class="sortable" data-sort="ISBN13">ISBN <span class="sort-indicator"></span></th>
+                                <th>Ảnh bìa</th>
                                 <th class="sortable" data-sort="Title">Tên sách <span class="sort-indicator"></span></th>
                                 <th class="sortable" data-sort="CategoryName">Danh mục <span class="sort-indicator"></span></th>
                                 <th class="sortable" data-sort="PublisherName">NXB <span class="sort-indicator"></span></th>
@@ -59,7 +60,7 @@
                             </tr>
                         </thead>
                         <tbody id="bookTableBody">
-                            <tr><td colspan="10" class="text-center text-muted">Đang tải dữ liệu...</td></tr>
+                            <tr><td colspan="11" class="text-center text-muted">Đang tải dữ liệu...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -99,7 +100,7 @@
 
     function loadData(page) {
         currentPage = page || 1;
-        $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-muted">Đang tải dữ liệu...</td></tr>');
+        $('#bookTableBody').html('<tr><td colspan="11" class="text-center text-muted">Đang tải dữ liệu...</td></tr>');
         $.ajax({
             url: '@Url.Action("GetBookList","BookMgmt")',
             type: 'POST',
@@ -116,7 +117,7 @@
                 console.log('[BookMgmt] GetBookList response:', res);
                 if (!res || res.ErrCode !== 1 || !res.Data) {
                     var errText = (res && res.ErrDesc ? res.ErrDesc : 'Không thể tải dữ liệu') + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
-                    $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-danger">' + escapeHtml(errText) + '</td></tr>');
+                    $('#bookTableBody').html('<tr><td colspan="11" class="text-center text-danger">' + escapeHtml(errText) + '</td></tr>');
                     $('#pagination').empty(); $('#pagingInfo').text(''); return;
                 }
                 renderTable(res.Data.Items || []);
@@ -124,22 +125,25 @@
             },
             error: function (xhr, status, error) {
                 console.error('[BookMgmt] GetBookList error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
-                $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-danger">Có lỗi xảy ra khi tải dữ liệu [HTTP ' + xhr.status + ' ' + error + ']</td></tr>');
+                $('#bookTableBody').html('<tr><td colspan="11" class="text-center text-danger">Có lỗi xảy ra khi tải dữ liệu [HTTP ' + xhr.status + ' ' + error + ']</td></tr>');
                 $('#pagination').empty(); $('#pagingInfo').text('');
             }
         });
     }
 
     function renderTable(items) {
-        if (!items.length) { $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-muted">Không có sách phù hợp.</td></tr>'); return; }
+        if (!items.length) { $('#bookTableBody').html('<tr><td colspan="11" class="text-center text-muted">Không có sách phù hợp.</td></tr>'); return; }
         var rows = [];
         $.each(items, function (_, item) {
             var badge = item.IsDeleted ? '<span class="badge text-bg-secondary">Đã xóa</span>'
                 : (item.Active ? '<span class="badge text-bg-success">Đang bán</span>' : '<span class="badge text-bg-warning">Ngừng bán</span>');
             var delBtn = item.IsDeleted ? '' : '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' + item.BookId + '" data-name="' + escapeHtml(item.Title) + '">Xóa</button>';
+            var cover = item.CoverUrl ? '<img src="' + escapeHtml(item.CoverUrl) + '" alt="" style="width:40px;height:56px;object-fit:cover;border-radius:4px;" class="border" />'
+                : '<div class="border bg-light d-flex align-items-center justify-content-center text-muted" style="width:40px;height:56px;border-radius:4px;"><i class="bi bi-image"></i></div>';
             rows.push('<tr>' +
                 '<td>' + item.BookId + '</td>' +
                 '<td>' + escapeHtml(item.ISBN13) + '</td>' +
+                '<td>' + cover + '</td>' +
                 '<td>' + escapeHtml(item.Title) + '</td>' +
                 '<td>' + escapeHtml(item.CategoryName) + '</td>' +
                 '<td>' + escapeHtml(item.PublisherName) + '</td>' +

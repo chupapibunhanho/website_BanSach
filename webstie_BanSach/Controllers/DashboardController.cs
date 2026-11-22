@@ -13,9 +13,10 @@ namespace webstie_BanSach.Controllers
         }
 
         [HttpPost]
-        public JsonResult GetDashboard(int days = 30)
+        public JsonResult GetDashboard(string range = "30", string days = null)
         {
-            var result = _biz.GetDashboard(days);
+            var value = !string.IsNullOrWhiteSpace(range) ? range : days;
+            var result = _biz.GetDashboard(value);
             return Json(result, JsonRequestBehavior.AllowGet);
         }
     }

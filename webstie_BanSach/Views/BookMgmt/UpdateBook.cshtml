@@ -54,17 +54,13 @@
                     <label class="form-label">Mô tả</label>
                     <textarea class="form-control" id="txtDescription" rows="4"></textarea>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="chkActive">
-                        <label class="form-check-label" for="chkActive">Đang bán</label>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="chkIsDeleted">
-                        <label class="form-check-label" for="chkIsDeleted">Đã xóa (soft delete)</label>
-                    </div>
+                <div class="col-md-4">
+                    <label for="ddlStatus" class="form-label">Trạng thái</label>
+                    <select class="form-select" id="ddlStatus">
+                        <option value="active">Đang bán</option>
+                        <option value="inactive">Ngừng bán</option>
+                        <option value="deleted">Đã xóa</option>
+                    </select>
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary" id="btnSave">Cập nhật</button>
@@ -109,8 +105,8 @@
                     $('#txtStock').val(d.Stock);
                     $('#txtCoverUrl').val(d.CoverUrl || '');
                     $('#txtDescription').val(d.Description || '');
-                    $('#chkActive').prop('checked', !!d.Active);
-                    $('#chkIsDeleted').prop('checked', !!d.IsDeleted);
+                    var st = d.IsDeleted ? 'deleted' : (d.Active ? 'active' : 'inactive');
+                    $('#ddlStatus').val(st);
                     var ids = (d.AuthorIds || []).map(function (x) { return String(x); });
                     $('#ddlAuthors option').each(function () { $(this).prop('selected', ids.indexOf($(this).val()) >= 0); });
                 } else {
@@ -126,6 +122,7 @@
 
     $('#updateBookForm').on('submit', function (e) {
         e.preventDefault();
+        var _st = $('#ddlStatus').val();
         var payload = {
             txt_BookId: bookId,
             txt_ISBN13: $.trim($('#txtISBN13').val()),
@@ -136,8 +133,8 @@
             txt_Stock: $('#txtStock').val() || 0,
             txt_CoverUrl: $.trim($('#txtCoverUrl').val()),
             txt_Description: $.trim($('#txtDescription').val()),
-            chk_Active: $('#chkActive').is(':checked'),
-            chk_IsDeleted: $('#chkIsDeleted').is(':checked'),
+            chk_Active: (_st !== 'inactive' && _st !== 'deleted'),
+            chk_IsDeleted: (_st === 'deleted'),
             txt_AuthorIds: ($('#ddlAuthors').val() || []).join(',')
         };
         if (!bookId || !payload.txt_ISBN13 || !payload.txt_Title || payload.txt_Price === '') { showToast('Vui lòng nhập đầy đủ thông tin sách', 'error'); return; }
