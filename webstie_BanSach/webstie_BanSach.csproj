@@ -140,10 +140,14 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Database.dbml</DependentUpon>
     </Compile>
+    <Compile Include="Business\AuthorMgmt_ctrl.cs" />
     <Compile Include="Business\BookMgmt_ctrl.cs" />
     <Compile Include="Business\CategoryMgmt_ctrl.cs" />
+    <Compile Include="Business\PublisherMgmt_ctrl.cs" />
+    <Compile Include="Controllers\AuthorMgmtController.cs" />
     <Compile Include="Controllers\BookMgmtController.cs" />
     <Compile Include="Controllers\CategoryMgmtController.cs" />
+    <Compile Include="Controllers\PublisherMgmtController.cs" />
     <Compile Include="Models\Database.cs" />
     <Compile Include="Models\FunctResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -436,10 +440,16 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Shared\_AdminLayout.cshtml" />
     <Content Include="Views\Book\_bookListContent.cshtml" />
+    <Content Include="Views\AuthorMgmt\AddAuthor.cshtml" />
+    <Content Include="Views\AuthorMgmt\AuthorList.cshtml" />
+    <Content Include="Views\AuthorMgmt\UpdateAuthor.cshtml" />
     <Content Include="Views\BookMgmt\AddBook.cshtml" />
     <Content Include="Views\BookMgmt\BookList.cshtml" />
     <Content Include="Views\BookMgmt\UpdateBook.cshtml" />
     <Content Include="Views\CategoryMgmt\AddCategory.cshtml" />
+    <Content Include="Views\PublisherMgmt\AddPublisher.cshtml" />
+    <Content Include="Views\PublisherMgmt\PublisherList.cshtml" />
+    <Content Include="Views\PublisherMgmt\UpdatePublisher.cshtml" />
     <Content Include="Views\CategoryMgmt\CategoryList.cshtml" />
     <Content Include="Views\CategoryMgmt\UpdateCategory.cshtml" />
   </ItemGroup>

@@ -1,0 +1,20 @@
+﻿@{
+    ViewBag.Title = "Thêm nhà xuất bản";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<div class="app-content-header"><div class="container-fluid"><div class="row">
+    <div class="col-sm-6"><h3 class="mb-0">Thêm nhà xuất bản</h3></div>
+    <div class="col-sm-6 text-end"><a href="@Url.Action("PublisherList","PublisherMgmt")" class="btn btn-outline-secondary">Quay lại danh sách</a></div>
+</div></div></div>
+<div class="app-content"><div class="container-fluid"><div class="card"><div class="card-body">
+    <form id="frm"><div class="mb-3"><label class="form-label">Tên nhà xuất bản <span class="text-danger">*</span></label><input type="text" class="form-control" id="txtName" maxlength="200" /></div><button type="submit" class="btn btn-primary" id="btnSave">Lưu</button></form>
+</div></div></div></div>
+@section scripts {
+<script>
+(function(){
+    $('#frm').on('submit',function(e){ e.preventDefault(); var name=$.trim($('#txtName').val()); if(!name){showToast('Vui lòng nhập tên nhà xuất bản','error');return;} $('#btnSave').prop('disabled',true).text('Đang lưu...');
+        $.ajax({url:'@Url.Action("Insert","PublisherMgmt")',type:'POST',data:{txt_PublisherName:name},success:function(res){ console.log('[PublisherMgmt] Insert response:',res); if(res&&res.ErrCode===1){showToast(res.ErrDesc||'Thêm thành công','success'); setTimeout(function(){window.location.href='@Url.Action("PublisherList","PublisherMgmt")';},700);}else{showToast((res&&res.ErrDesc?res.ErrDesc:'Thêm thất bại')+(res&&res.ErrCode!==undefined?' [ErrCode: '+res.ErrCode+']':''),'error');}},error:function(xhr,s,err){console.error('[PublisherMgmt] Insert error:',xhr.responseText); showToast('Có lỗi xảy ra [HTTP '+xhr.status+']','error');},complete:function(){$('#btnSave').prop('disabled',false).text('Lưu');}});
+    });
+})();
+</script>
+}
