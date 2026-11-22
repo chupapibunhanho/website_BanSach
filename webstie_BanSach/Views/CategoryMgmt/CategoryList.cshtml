@@ -39,11 +39,11 @@
                     <table class="table table-bordered table-hover align-middle">
                         <thead>
                             <tr>
-                                <th style="width:70px;">ID</th>
-                                <th style="width:160px;">Mã danh mục</th>
-                                <th>Tên danh mục</th>
-                                <th style="width:130px;">Trạng thái</th>
-                                <th style="width:170px;">Cập nhật</th>
+                                <th style="width:70px;" class="sortable" data-sort="CategoryId">ID <span class="sort-indicator"></span></th>
+                                <th style="width:160px;" class="sortable" data-sort="CategoryCode">Mã danh mục <span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort="Name">Tên danh mục <span class="sort-indicator"></span></th>
+                                <th style="width:130px;" class="sortable" data-sort="IsDeleted">Trạng thái <span class="sort-indicator"></span></th>
+                                <th style="width:170px;" class="sortable" data-sort="UpdatedAtUtc">Cập nhật <span class="sort-indicator"></span></th>
                                 <th style="width:160px;">Thao tác</th>
                             </tr>
                         </thead>
@@ -65,12 +65,32 @@
 </div>
 
 @section scripts {
+<style>
+    th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    th.sortable .sort-indicator { font-size: 0.8em; color: #888; margin-left: 4px; }
+    th.sortable.active .sort-indicator { color: #0d6efd; }
+</style>
 <script>
     (function () {
         var currentPage = 1;
+        var sortBy = 'UpdatedAtUtc';
+        var sortDir = 'desc';
 
         function escapeHtml(text) {
             return $('<div/>').text(text == null ? '' : text).html();
+        }
+
+        function updateSortIndicators() {
+            $('th.sortable').removeClass('active').each(function () {
+                var col = $(this).data('sort');
+                var indicator = $(this).find('.sort-indicator');
+                if (col === sortBy) {
+                    $(this).addClass('active');
+                    indicator.text(sortDir === 'asc' ? '▲' : '▼');
+                } else {
+                    indicator.text('↕');
+                }
+            });
         }
 
         function loadData(page) {
@@ -83,7 +103,7 @@
             $.ajax({
                 url: '@Url.Action("GetCategoryList", "CategoryMgmt")',
                 type: 'POST',
-                data: { keyword: keyword, status: status, page: currentPage },
+                data: { keyword: keyword, status: status, page: currentPage, sortBy: sortBy, sortDir: sortDir },
                 success: function (res) {
                     console.log('[CategoryMgmt] GetCategoryList response:', res);
                     if (!res || res.ErrCode !== 1 || !res.Data) {
@@ -181,6 +201,18 @@
 
         $('#ddlStatus').on('change', function () { loadData(1); });
 
+        $('th.sortable').on('click', function () {
+            var col = $(this).data('sort');
+            if (sortBy === col) {
+                sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortBy = col;
+                sortDir = 'asc';
+            }
+            updateSortIndicators();
+            loadData(1);
+        });
+
         $('#pagination').on('click', 'a.page-link', function (e) {
             e.preventDefault();
             var page = parseInt($(this).data('page'), 10);
@@ -216,6 +248,7 @@
             });
         });
 
+        updateSortIndicators();
         loadData(1);
     })();
 </script>

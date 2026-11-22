@@ -46,15 +46,15 @@
                     <table class="table table-bordered table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>ISBN</th>
-                                <th>Tên sách</th>
-                                <th>Danh mục</th>
-                                <th>NXB</th>
-                                <th class="text-end">Giá</th>
-                                <th class="text-end">Tồn</th>
-                                <th>Trạng thái</th>
-                                <th>Cập nhật</th>
+                                <th class="sortable" data-sort="BookId">ID <span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort="ISBN13">ISBN <span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort="Title">Tên sách <span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort="CategoryName">Danh mục <span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort="PublisherName">NXB <span class="sort-indicator"></span></th>
+                                <th class="text-end sortable" data-sort="Price">Giá <span class="sort-indicator"></span></th>
+                                <th class="text-end sortable" data-sort="Stock">Tồn <span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort="Status">Trạng thái <span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort="UpdatedAtUtc">Cập nhật <span class="sort-indicator"></span></th>
                                 <th style="width:150px;">Thao tác</th>
                             </tr>
                         </thead>
@@ -74,11 +74,17 @@
 </div>
 
 @section scripts {
+<style>
+    th.sortable { cursor:pointer; user-select:none; white-space:nowrap; }
+    th.sortable .sort-indicator { font-size:.8em; color:#888; margin-left:4px; }
+    th.sortable.active .sort-indicator { color:#0d6efd; }
+</style>
 <script>
 (function () {
-    var currentPage = 1;
+    var currentPage = 1, sortBy = 'UpdatedAtUtc', sortDir = 'desc';
     function escapeHtml(text) { return $('<div/>').text(text == null ? '' : text).html(); }
     function formatPrice(v) { return Number(v || 0).toLocaleString('vi-VN'); }
+    function updateSortIndicators(){ $('th.sortable').removeClass('active').each(function(){ var col=$(this).data('sort'), ind=$(this).find('.sort-indicator'); if(col===sortBy){$(this).addClass('active'); ind.text(sortDir==='asc'?'▲':'▼');} else {ind.text('↕');} }); }
 
     function loadDropdowns() {
         $.get('@Url.Action("GetDropdownData","BookMgmt")', function (res) {
@@ -102,7 +108,9 @@
                 categoryId: $('#ddlCategory').val() || null,
                 publisherId: $('#ddlPublisher').val() || null,
                 status: $('#ddlStatus').val(),
-                page: currentPage
+                page: currentPage,
+                sortBy: sortBy,
+                sortDir: sortDir
             },
             success: function (res) {
                 console.log('[BookMgmt] GetBookList response:', res);
@@ -161,6 +169,7 @@
     $('#btnReset').on('click', function () { $('#txtKeyword').val(''); $('#ddlCategory').val(''); $('#ddlPublisher').val(''); $('#ddlStatus').val('active'); loadData(1); });
     $('#txtKeyword').on('keypress', function (e) { if (e.which === 13) loadData(1); });
     $('#ddlCategory,#ddlPublisher,#ddlStatus').on('change', function () { loadData(1); });
+    $('th.sortable').on('click', function () { var col=$(this).data('sort'); if(sortBy===col){sortDir=sortDir==='asc'?'desc':'asc';} else {sortBy=col; sortDir='asc';} updateSortIndicators(); loadData(1); });
     $('#pagination').on('click', 'a.page-link', function (e) { e.preventDefault(); var p = parseInt($(this).data('page'), 10); if (p > 0) loadData(p); });
 
     $('#bookTableBody').on('click', '.btn-delete', function () {
@@ -181,6 +190,7 @@
     });
 
     loadDropdowns();
+    updateSortIndicators();
     loadData(1);
 })();
 </script>

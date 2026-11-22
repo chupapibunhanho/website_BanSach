@@ -32,7 +32,7 @@ namespace webstie_BanSach.Business
             public bool IsDeleted { get; set; }
         }
 
-        public FunctResult<AuthorPagedResult> GetPagedList(string keyword, string status, int page)
+        public FunctResult<AuthorPagedResult> GetPagedList(string keyword, string status, int page, string sortBy = "UpdatedAtUtc", string sortDir = "desc")
         {
             var result = new FunctResult<AuthorPagedResult>();
             try
@@ -58,7 +58,17 @@ namespace webstie_BanSach.Business
                     if (page < 1) page = 1;
                     if (page > totalPages) page = totalPages;
 
-                    var rawItems = query.OrderByDescending(a => a.UpdatedAtUtc).ThenByDescending(a => a.AuthorId)
+                    bool asc = string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase);
+                    IOrderedQueryable<Author> ordered;
+                    switch ((sortBy ?? "").Trim().ToLower())
+                    {
+                        case "authorid": ordered = asc ? query.OrderBy(a => a.AuthorId) : query.OrderByDescending(a => a.AuthorId); break;
+                        case "authorname": ordered = asc ? query.OrderBy(a => a.AuthorName).ThenBy(a => a.AuthorId) : query.OrderByDescending(a => a.AuthorName).ThenByDescending(a => a.AuthorId); break;
+                        case "isdeleted": ordered = asc ? query.OrderBy(a => a.IsDeleted).ThenByDescending(a => a.AuthorId) : query.OrderByDescending(a => a.IsDeleted).ThenByDescending(a => a.AuthorId); break;
+                        default: ordered = asc ? query.OrderBy(a => a.UpdatedAtUtc).ThenBy(a => a.AuthorId) : query.OrderByDescending(a => a.UpdatedAtUtc).ThenByDescending(a => a.AuthorId); break;
+                    }
+
+                    var rawItems = ordered
                         .Skip((page - 1) * PageSize).Take(PageSize)
                         .Select(a => new { a.AuthorId, a.AuthorName, a.IsDeleted, a.UpdatedAtUtc }).ToList();
 

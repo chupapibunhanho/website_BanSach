@@ -13,9 +13,9 @@ namespace webstie_BanSach.Controllers
         public ActionResult UpdateAuthor(int? id) { ViewBag.AuthorId = id; return View(); }
 
         [HttpPost]
-        public JsonResult GetAuthorList(string keyword, string status, int page = 1)
+        public JsonResult GetAuthorList(string keyword, string status, int page = 1, string sortBy = "UpdatedAtUtc", string sortDir = "desc")
         {
-            var result = _biz.GetPagedList(keyword, status, page);
+            var result = _biz.GetPagedList(keyword, status, page, sortBy, sortDir);
             return Json(result, JsonRequestBehavior.AllowGet);
         }
 

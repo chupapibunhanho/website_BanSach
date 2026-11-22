@@ -27,9 +27,9 @@ namespace webstie_BanSach.Controllers
         }
 
         [HttpPost]
-        public JsonResult GetBookList(string keyword, int? categoryId, int? publisherId, string status, int page = 1)
+        public JsonResult GetBookList(string keyword, int? categoryId, int? publisherId, string status, int page = 1, string sortBy = "UpdatedAtUtc", string sortDir = "desc")
         {
-            var result = _bookBusiness.GetPagedList(keyword, categoryId, publisherId, status, page);
+            var result = _bookBusiness.GetPagedList(keyword, categoryId, publisherId, status, page, sortBy, sortDir);
             return Json(result, JsonRequestBehavior.AllowGet);
         }
 

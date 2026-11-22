@@ -60,7 +60,14 @@ namespace webstie_BanSach.Business
             public List<int> AuthorIds { get; set; }
         }
 
-        public FunctResult<BookPagedResult> GetPagedList(string keyword, int? categoryId, int? publisherId, string status, int page)
+        private class BookQueryRow
+        {
+            public Book B { get; set; }
+            public string CategoryName { get; set; }
+            public string PublisherName { get; set; }
+        }
+
+        public FunctResult<BookPagedResult> GetPagedList(string keyword, int? categoryId, int? publisherId, string status, int page, string sortBy = "UpdatedAtUtc", string sortDir = "desc")
         {
             var result = new FunctResult<BookPagedResult>();
             try
@@ -72,36 +79,36 @@ namespace webstie_BanSach.Business
                                 from c in cj.DefaultIfEmpty()
                                 join p in db.Publishers on b.PublisherId equals p.PublisherId into pj
                                 from p in pj.DefaultIfEmpty()
-                                select new { b, CategoryName = c != null ? c.Name : "", PublisherName = p != null ? p.PublisherName : "" };
+                                select new BookQueryRow { B = b, CategoryName = c != null ? c.Name : "", PublisherName = p != null ? p.PublisherName : "" };
 
                     if (!string.IsNullOrWhiteSpace(keyword))
                     {
                         string kw = keyword.Trim().ToLower();
                         query = query.Where(x =>
-                            x.b.Title.ToLower().Contains(kw) ||
-                            x.b.ISBN13.ToLower().Contains(kw) ||
+                            x.B.Title.ToLower().Contains(kw) ||
+                            x.B.ISBN13.ToLower().Contains(kw) ||
                             (x.CategoryName ?? "").ToLower().Contains(kw) ||
                             (x.PublisherName ?? "").ToLower().Contains(kw));
                     }
 
                     if (categoryId.HasValue && categoryId.Value > 0)
-                        query = query.Where(x => x.b.CategoryId == categoryId.Value);
+                        query = query.Where(x => x.B.CategoryId == categoryId.Value);
 
                     if (publisherId.HasValue && publisherId.Value > 0)
-                        query = query.Where(x => x.b.PublisherId == publisherId.Value);
+                        query = query.Where(x => x.B.PublisherId == publisherId.Value);
 
                     switch ((status ?? "active").Trim().ToLower())
                     {
                         case "inactive":
-                            query = query.Where(x => !x.b.IsDeleted && !x.b.Active);
+                            query = query.Where(x => !x.B.IsDeleted && !x.B.Active);
                             break;
                         case "deleted":
-                            query = query.Where(x => x.b.IsDeleted);
+                            query = query.Where(x => x.B.IsDeleted);
                             break;
                         case "all":
                             break;
-                        default: // active
-                            query = query.Where(x => !x.b.IsDeleted && x.b.Active);
+                        default:
+                            query = query.Where(x => !x.B.IsDeleted && x.B.Active);
                             break;
                     }
 
@@ -111,23 +118,37 @@ namespace webstie_BanSach.Business
                     if (page < 1) page = 1;
                     if (page > totalPages) page = totalPages;
 
-                    var rawItems = query
-                        .OrderByDescending(x => x.b.UpdatedAtUtc)
-                        .ThenByDescending(x => x.b.BookId)
+                    bool asc = string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase);
+                    var s = (sortBy ?? "").Trim().ToLower();
+                    IOrderedQueryable<BookQueryRow> sortedQ;
+                    switch (s)
+                    {
+                        case "bookid": sortedQ = asc ? query.OrderBy(x => x.B.BookId) : query.OrderByDescending(x => x.B.BookId); break;
+                        case "isbn13": sortedQ = asc ? query.OrderBy(x => x.B.ISBN13).ThenByDescending(x => x.B.BookId) : query.OrderByDescending(x => x.B.ISBN13).ThenByDescending(x => x.B.BookId); break;
+                        case "title": sortedQ = asc ? query.OrderBy(x => x.B.Title).ThenByDescending(x => x.B.BookId) : query.OrderByDescending(x => x.B.Title).ThenByDescending(x => x.B.BookId); break;
+                        case "categoryname": sortedQ = asc ? query.OrderBy(x => x.CategoryName).ThenByDescending(x => x.B.BookId) : query.OrderByDescending(x => x.CategoryName).ThenByDescending(x => x.B.BookId); break;
+                        case "publishername": sortedQ = asc ? query.OrderBy(x => x.PublisherName).ThenByDescending(x => x.B.BookId) : query.OrderByDescending(x => x.PublisherName).ThenByDescending(x => x.B.BookId); break;
+                        case "price": sortedQ = asc ? query.OrderBy(x => x.B.Price).ThenByDescending(x => x.B.BookId) : query.OrderByDescending(x => x.B.Price).ThenByDescending(x => x.B.BookId); break;
+                        case "stock": sortedQ = asc ? query.OrderBy(x => x.B.Stock).ThenByDescending(x => x.B.BookId) : query.OrderByDescending(x => x.B.Stock).ThenByDescending(x => x.B.BookId); break;
+                        case "status": sortedQ = asc ? query.OrderBy(x => x.B.IsDeleted).ThenBy(x => x.B.Active).ThenByDescending(x => x.B.BookId) : query.OrderByDescending(x => x.B.IsDeleted).ThenByDescending(x => x.B.Active).ThenByDescending(x => x.B.BookId); break;
+                        default: sortedQ = asc ? query.OrderBy(x => x.B.UpdatedAtUtc).ThenBy(x => x.B.BookId) : query.OrderByDescending(x => x.B.UpdatedAtUtc).ThenByDescending(x => x.B.BookId); break;
+                    }
+
+                    var rawItems = sortedQ
                         .Skip((page - 1) * PageSize)
                         .Take(PageSize)
                         .Select(x => new
                         {
-                            x.b.BookId,
-                            x.b.ISBN13,
-                            x.b.Title,
-                            x.CategoryName,
-                            x.PublisherName,
-                            x.b.Price,
-                            x.b.Stock,
-                            x.b.Active,
-                            x.b.IsDeleted,
-                            x.b.UpdatedAtUtc
+                            BookId = x.B.BookId,
+                            ISBN13 = x.B.ISBN13,
+                            Title = x.B.Title,
+                            CategoryName = x.CategoryName,
+                            PublisherName = x.PublisherName,
+                            Price = x.B.Price,
+                            Stock = x.B.Stock,
+                            Active = x.B.Active,
+                            IsDeleted = x.B.IsDeleted,
+                            UpdatedAtUtc = x.B.UpdatedAtUtc
                         })
                         .ToList();
 

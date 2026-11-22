@@ -25,9 +25,9 @@ namespace webstie_BanSach.Controllers
         }
 
         [HttpPost]
-        public JsonResult GetCategoryList(string keyword, string status, int page = 1)
+        public JsonResult GetCategoryList(string keyword, string status, int page = 1, string sortBy = "UpdatedAtUtc", string sortDir = "desc")
         {
-            var result = _categoryBusiness.GetPagedList(keyword, status, page);
+            var result = _categoryBusiness.GetPagedList(keyword, status, page, sortBy, sortDir);
             return Json(result, JsonRequestBehavior.AllowGet);
         }
 

@@ -34,7 +34,7 @@ namespace webstie_BanSach.Business
             public bool IsDeleted { get; set; }
         }
 
-        public FunctResult<CategoryPagedResult> GetPagedList(string keyword, string status, int page)
+        public FunctResult<CategoryPagedResult> GetPagedList(string keyword, string status, int page, string sortBy = "UpdatedAtUtc", string sortDir = "desc")
         {
             var result = new FunctResult<CategoryPagedResult>();
             try
@@ -69,9 +69,28 @@ namespace webstie_BanSach.Business
                     if (page < 1) page = 1;
                     if (page > totalPages) page = totalPages;
 
-                    var rawItems = query
-                        .OrderByDescending(c => c.UpdatedAtUtc)
-                        .ThenByDescending(c => c.CategoryId)
+                    bool asc = string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase);
+                    IOrderedQueryable<Category> ordered;
+                    switch ((sortBy ?? "").Trim().ToLower())
+                    {
+                        case "categoryid":
+                            ordered = asc ? query.OrderBy(c => c.CategoryId) : query.OrderByDescending(c => c.CategoryId);
+                            break;
+                        case "categorycode":
+                            ordered = asc ? query.OrderBy(c => c.CategoryCode).ThenBy(c => c.CategoryId) : query.OrderByDescending(c => c.CategoryCode).ThenByDescending(c => c.CategoryId);
+                            break;
+                        case "name":
+                            ordered = asc ? query.OrderBy(c => c.Name).ThenBy(c => c.CategoryId) : query.OrderByDescending(c => c.Name).ThenByDescending(c => c.CategoryId);
+                            break;
+                        case "isdeleted":
+                            ordered = asc ? query.OrderBy(c => c.IsDeleted).ThenByDescending(c => c.CategoryId) : query.OrderByDescending(c => c.IsDeleted).ThenByDescending(c => c.CategoryId);
+                            break;
+                        default:
+                            ordered = asc ? query.OrderBy(c => c.UpdatedAtUtc).ThenBy(c => c.CategoryId) : query.OrderByDescending(c => c.UpdatedAtUtc).ThenByDescending(c => c.CategoryId);
+                            break;
+                    }
+
+                    var rawItems = ordered
                         .Skip((page - 1) * PageSize)
                         .Take(PageSize)
                         .Select(c => new
