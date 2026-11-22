@@ -1,0 +1,222 @@
+﻿@{
+    ViewBag.Title = "Danh sách danh mục";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6"><h3 class="mb-0">Danh sách danh mục</h3></div>
+            <div class="col-sm-6 text-end">
+                <a href="@Url.Action("AddCategory","CategoryMgmt")" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm danh mục</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-5">
+                        <input id="txtKeyword" type="text" class="form-control" placeholder="Tìm theo mã hoặc tên danh mục..." />
+                    </div>
+                    <div class="col-md-3">
+                        <select id="ddlStatus" class="form-select">
+                            <option value="active">Đang hoạt động</option>
+                            <option value="deleted">Đã xóa</option>
+                            <option value="all">Tất cả</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button id="btnSearch" class="btn btn-primary" type="button">Tìm kiếm</button>
+                        <button id="btnReset" class="btn btn-outline-secondary" type="button">Làm mới</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width:70px;">ID</th>
+                                <th style="width:160px;">Mã danh mục</th>
+                                <th>Tên danh mục</th>
+                                <th style="width:130px;">Trạng thái</th>
+                                <th style="width:170px;">Cập nhật</th>
+                                <th style="width:160px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoryTableBody">
+                            <tr><td colspan="6" class="text-center text-muted">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div id="pagingInfo" class="text-muted small"></div>
+                    <nav>
+                        <ul class="pagination mb-0" id="pagination"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    (function () {
+        var currentPage = 1;
+
+        function escapeHtml(text) {
+            return $('<div/>').text(text == null ? '' : text).html();
+        }
+
+        function loadData(page) {
+            currentPage = page || 1;
+            var keyword = $('#txtKeyword').val();
+            var status = $('#ddlStatus').val();
+
+            $('#categoryTableBody').html('<tr><td colspan="6" class="text-center text-muted">Đang tải dữ liệu...</td></tr>');
+
+            $.ajax({
+                url: '@Url.Action("GetCategoryList", "CategoryMgmt")',
+                type: 'POST',
+                data: { keyword: keyword, status: status, page: currentPage },
+                success: function (res) {
+                    console.log('[CategoryMgmt] GetCategoryList response:', res);
+                    if (!res || res.ErrCode !== 1 || !res.Data) {
+                        var errText = (res && res.ErrDesc ? res.ErrDesc : 'Không thể tải dữ liệu')
+                            + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
+                        $('#categoryTableBody').html('<tr><td colspan="6" class="text-center text-danger">' + escapeHtml(errText) + '</td></tr>');
+                        $('#pagination').empty();
+                        $('#pagingInfo').text('');
+                        return;
+                    }
+
+                    renderTable(res.Data.Items || []);
+                    renderPaging(res.Data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('[CategoryMgmt] GetCategoryList error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                    var errText = 'Có lỗi xảy ra khi tải dữ liệu [HTTP ' + xhr.status + ' ' + error + ']';
+                    $('#categoryTableBody').html('<tr><td colspan="6" class="text-center text-danger">' + escapeHtml(errText) + '</td></tr>');
+                    $('#pagination').empty();
+                    $('#pagingInfo').text('');
+                }
+            });
+        }
+
+        function renderTable(items) {
+            if (!items.length) {
+                $('#categoryTableBody').html('<tr><td colspan="6" class="text-center text-muted">Không có danh mục phù hợp.</td></tr>');
+                return;
+            }
+
+            var rows = [];
+            $.each(items, function (_, item) {
+                var statusBadge = item.IsDeleted
+                    ? '<span class="badge text-bg-secondary">Đã xóa</span>'
+                    : '<span class="badge text-bg-success">Hoạt động</span>';
+
+                var deleteBtn = item.IsDeleted
+                    ? ''
+                    : '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' + item.CategoryId + '" data-name="' + escapeHtml(item.Name) + '">Xóa</button>';
+
+                rows.push(
+                    '<tr>' +
+                        '<td>' + item.CategoryId + '</td>' +
+                        '<td>' + escapeHtml(item.CategoryCode) + '</td>' +
+                        '<td>' + escapeHtml(item.Name) + '</td>' +
+                        '<td>' + statusBadge + '</td>' +
+                        '<td>' + escapeHtml(item.UpdatedAtUtc) + '</td>' +
+                        '<td>' +
+                            '<a class="btn btn-sm btn-outline-primary me-1" href="@Url.Action("UpdateCategory","CategoryMgmt")?id=' + item.CategoryId + '">Sửa</a>' +
+                            deleteBtn +
+                        '</td>' +
+                    '</tr>'
+                );
+            });
+
+            $('#categoryTableBody').html(rows.join(''));
+        }
+
+        function renderPaging(data) {
+            var totalRecords = data.TotalRecords || 0;
+            var current = data.CurrentPage || 1;
+            var totalPages = data.TotalPages || 1;
+
+            $('#pagingInfo').text('Tổng: ' + totalRecords + ' danh mục | Trang ' + current + '/' + totalPages);
+
+            var html = [];
+            var prevDisabled = current <= 1 ? ' disabled' : '';
+            var nextDisabled = current >= totalPages ? ' disabled' : '';
+
+            html.push('<li class="page-item' + prevDisabled + '"><a class="page-link" href="#" data-page="' + (current - 1) + '">Trước</a></li>');
+
+            var start = Math.max(1, current - 2);
+            var end = Math.min(totalPages, current + 2);
+            for (var i = start; i <= end; i++) {
+                var active = i === current ? ' active' : '';
+                html.push('<li class="page-item' + active + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+            }
+
+            html.push('<li class="page-item' + nextDisabled + '"><a class="page-link" href="#" data-page="' + (current + 1) + '">Sau</a></li>');
+            $('#pagination').html(html.join(''));
+        }
+
+        $('#btnSearch').on('click', function () { loadData(1); });
+        $('#btnReset').on('click', function () {
+            $('#txtKeyword').val('');
+            $('#ddlStatus').val('active');
+            loadData(1);
+        });
+
+        $('#txtKeyword').on('keypress', function (e) {
+            if (e.which === 13) {
+                loadData(1);
+            }
+        });
+
+        $('#ddlStatus').on('change', function () { loadData(1); });
+
+        $('#pagination').on('click', 'a.page-link', function (e) {
+            e.preventDefault();
+            var page = parseInt($(this).data('page'), 10);
+            if (!isNaN(page) && page > 0) {
+                loadData(page);
+            }
+        });
+
+        $('#categoryTableBody').on('click', '.btn-delete', function () {
+            var id = $(this).data('id');
+            var name = $(this).data('name');
+            if (!confirm('Bạn có chắc muốn xóa danh mục "' + name + '"?')) return;
+
+            $.ajax({
+                url: '@Url.Action("Delete", "CategoryMgmt")',
+                type: 'POST',
+                data: { id: id },
+                success: function (res) {
+                    console.log('[CategoryMgmt] Delete response:', res);
+                    if (res && res.ErrCode === 1) {
+                        showToast(res.ErrDesc || 'Xóa danh mục thành công', 'success');
+                        loadData(currentPage);
+                    } else {
+                        var errText = (res && res.ErrDesc ? res.ErrDesc : 'Xóa danh mục thất bại')
+                            + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
+                        showToast(errText, 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('[CategoryMgmt] Delete error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                    showToast('Có lỗi xảy ra khi xóa danh mục [HTTP ' + xhr.status + ' ' + error + ']', 'error');
+                }
+            });
+        });
+
+        loadData(1);
+    })();
+</script>
+}

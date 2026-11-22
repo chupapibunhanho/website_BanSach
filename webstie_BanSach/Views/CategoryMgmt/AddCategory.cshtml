@@ -1,0 +1,82 @@
+﻿@{
+    ViewBag.Title = "Thêm danh mục";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6"><h3 class="mb-0">Thêm danh mục</h3></div>
+            <div class="col-sm-6 text-end">
+                <a href="@Url.Action("CategoryList","CategoryMgmt")" class="btn btn-outline-secondary">Quay lại danh sách</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <form id="addCategoryForm">
+                    <div class="mb-3">
+                        <label for="txtCategoryCode" class="form-label">Mã danh mục <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtCategoryCode" maxlength="30" placeholder="VD: CAT001" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="txtCategoryName" class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtCategoryName" maxlength="128" placeholder="Nhập tên danh mục" />
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btnSave">Lưu</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    (function () {
+        $('#addCategoryForm').on('submit', function (e) {
+            e.preventDefault();
+
+            var code = $.trim($('#txtCategoryCode').val());
+            var name = $.trim($('#txtCategoryName').val());
+            if (!code || !name) {
+                showToast('Vui lòng nhập đầy đủ mã và tên danh mục', 'error');
+                return;
+            }
+
+            $('#btnSave').prop('disabled', true).text('Đang lưu...');
+            $.ajax({
+                url: '@Url.Action("Insert", "CategoryMgmt")',
+                type: 'POST',
+                data: {
+                    txt_CategoryCode: code,
+                    txt_Name: name
+                },
+                success: function (res) {
+                    console.log('[CategoryMgmt] Insert response:', res);
+                    if (res && res.ErrCode === 1) {
+                        showToast(res.ErrDesc || 'Thêm danh mục thành công', 'success');
+                        setTimeout(function () {
+                            window.location.href = '@Url.Action("CategoryList", "CategoryMgmt")';
+                        }, 700);
+                    } else {
+                        var errText = (res && res.ErrDesc ? res.ErrDesc : 'Thêm danh mục thất bại')
+                            + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
+                        showToast(errText, 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('[CategoryMgmt] Insert error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                    showToast('Có lỗi xảy ra khi thêm danh mục [HTTP ' + xhr.status + ' ' + error + ']', 'error');
+                },
+                complete: function () {
+                    $('#btnSave').prop('disabled', false).text('Lưu');
+                }
+            });
+        });
+    })();
+</script>
+}

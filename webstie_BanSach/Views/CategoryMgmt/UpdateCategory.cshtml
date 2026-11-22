@@ -1,0 +1,126 @@
+﻿@{
+    ViewBag.Title = "Cập nhật danh mục";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var categoryId = ViewBag.CategoryId;
+}
+
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6"><h3 class="mb-0">Cập nhật danh mục</h3></div>
+            <div class="col-sm-6 text-end">
+                <a href="@Url.Action("CategoryList","CategoryMgmt")" class="btn btn-outline-secondary">Quay lại danh sách</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <form id="updateCategoryForm">
+                    <input type="hidden" id="txtCategoryId" value="@(categoryId ?? 0)" />
+
+                    <div class="mb-3">
+                        <label for="txtCategoryCode" class="form-label">Mã danh mục <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtCategoryCode" maxlength="30" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="txtCategoryName" class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtCategoryName" maxlength="128" />
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="chkIsDeleted">
+                        <label class="form-check-label" for="chkIsDeleted">Đánh dấu đã xóa (soft delete)</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="btnSave">Cập nhật</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    (function () {
+        var categoryId = parseInt($('#txtCategoryId').val(), 10) || 0;
+
+        function loadCategory() {
+            if (!categoryId) {
+                showToast('Thiếu ID danh mục cần cập nhật', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetCategoryInfo", "CategoryMgmt")',
+                type: 'GET',
+                data: { id: categoryId },
+                success: function (res) {
+                    console.log('[CategoryMgmt] GetCategoryInfo response:', res);
+                    if (res && res.ErrCode === 1 && res.Data) {
+                        $('#txtCategoryCode').val(res.Data.CategoryCode || '');
+                        $('#txtCategoryName').val(res.Data.Name || '');
+                        $('#chkIsDeleted').prop('checked', !!res.Data.IsDeleted);
+                    } else {
+                        var errText = (res && res.ErrDesc ? res.ErrDesc : 'Không thể tải thông tin danh mục')
+                            + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
+                        showToast(errText, 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('[CategoryMgmt] GetCategoryInfo error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                    showToast('Có lỗi xảy ra khi tải thông tin danh mục [HTTP ' + xhr.status + ' ' + error + ']', 'error');
+                }
+            });
+        }
+
+        $('#updateCategoryForm').on('submit', function (e) {
+            e.preventDefault();
+            var code = $.trim($('#txtCategoryCode').val());
+            var name = $.trim($('#txtCategoryName').val());
+            var isDeleted = $('#chkIsDeleted').is(':checked');
+
+            if (!categoryId || !code || !name) {
+                showToast('Vui lòng nhập đầy đủ thông tin danh mục', 'error');
+                return;
+            }
+
+            $('#btnSave').prop('disabled', true).text('Đang lưu...');
+            $.ajax({
+                url: '@Url.Action("Update", "CategoryMgmt")',
+                type: 'POST',
+                data: {
+                    txt_CategoryId: categoryId,
+                    txt_CategoryCode: code,
+                    txt_Name: name,
+                    chk_IsDeleted: isDeleted
+                },
+                success: function (res) {
+                    console.log('[CategoryMgmt] Update response:', res);
+                    if (res && res.ErrCode === 1) {
+                        showToast(res.ErrDesc || 'Cập nhật danh mục thành công', 'success');
+                        setTimeout(function () {
+                            window.location.href = '@Url.Action("CategoryList", "CategoryMgmt")';
+                        }, 700);
+                    } else {
+                        var errText = (res && res.ErrDesc ? res.ErrDesc : 'Cập nhật danh mục thất bại')
+                            + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
+                        showToast(errText, 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('[CategoryMgmt] Update error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                    showToast('Có lỗi xảy ra khi cập nhật danh mục [HTTP ' + xhr.status + ' ' + error + ']', 'error');
+                },
+                complete: function () {
+                    $('#btnSave').prop('disabled', false).text('Cập nhật');
+                }
+            });
+        });
+
+        loadCategory();
+    })();
+</script>
+}
