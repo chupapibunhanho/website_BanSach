@@ -219,6 +219,7 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Bussiness\" />
+    <Folder Include="DTOs\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
