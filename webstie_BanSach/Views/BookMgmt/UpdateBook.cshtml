@@ -1,0 +1,167 @@
+﻿@{
+    ViewBag.Title = "Cập nhật sách";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var bookId = ViewBag.BookId;
+}
+
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6"><h3 class="mb-0">Cập nhật sách</h3></div>
+            <div class="col-sm-6 text-end"><a href="@Url.Action("BookList","BookMgmt")" class="btn btn-outline-secondary">Quay lại danh sách</a></div>
+        </div>
+    </div>
+</div>
+
+<div class="app-content">
+    <div class="container-fluid">
+        <div class="card"><div class="card-body">
+            <form id="updateBookForm" class="row g-3">
+                <input type="hidden" id="txtBookId" value="@(bookId ?? 0)" />
+                <div class="col-md-4">
+                    <label class="form-label">ISBN13 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="txtISBN13" maxlength="13" />
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Tên sách <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="txtTitle" maxlength="256" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Danh mục</label>
+                    <select class="form-select" id="ddlCategory"><option value="">-- Chọn danh mục --</option></select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nhà xuất bản</label>
+                    <select class="form-select" id="ddlPublisher"><option value="">-- Chọn NXB --</option></select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tác giả (giữ Ctrl để chọn nhiều)</label>
+                    <select class="form-select" id="ddlAuthors" multiple size="4"></select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Giá <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="txtPrice" min="0" step="1000" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tồn kho</label>
+                    <input type="number" class="form-control" id="txtStock" min="0" step="1" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Ảnh bìa (URL)</label>
+                    <input type="text" class="form-control" id="txtCoverUrl" maxlength="512" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" id="txtDescription" rows="4"></textarea>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="chkActive">
+                        <label class="form-check-label" for="chkActive">Đang bán</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="chkIsDeleted">
+                        <label class="form-check-label" for="chkIsDeleted">Đã xóa (soft delete)</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary" id="btnSave">Cập nhật</button>
+                </div>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+(function () {
+    var bookId = parseInt($('#txtBookId').val(), 10) || 0;
+    function escapeHtml(text) { return $('<div/>').text(text == null ? '' : text).html(); }
+
+    function loadDropdowns() {
+        return $.get('@Url.Action("GetDropdownData","BookMgmt")').then(function (res) {
+            console.log('[BookMgmt] GetDropdownData response:', res);
+            if (!res || res.ErrCode !== 1 || !res.Data) { showToast((res && res.ErrDesc) || 'Không tải được dropdown', 'error'); return; }
+            (res.Data.Categories || []).forEach(function (c) { $('#ddlCategory').append('<option value="' + c.Id + '">' + escapeHtml(c.Name) + '</option>'); });
+            (res.Data.Publishers || []).forEach(function (p) { $('#ddlPublisher').append('<option value="' + p.Id + '">' + escapeHtml(p.Name) + '</option>'); });
+            (res.Data.Authors || []).forEach(function (a) { $('#ddlAuthors').append('<option value="' + a.Id + '">' + escapeHtml(a.Name) + '</option>'); });
+        }, function (xhr, status, error) {
+            console.error('[BookMgmt] GetDropdownData error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+            showToast('Lỗi tải dropdown [HTTP ' + xhr.status + ']', 'error');
+        });
+    }
+
+    function loadBook() {
+        if (!bookId) { showToast('Thiếu ID sách cần cập nhật', 'error'); return; }
+        $.ajax({
+            url: '@Url.Action("GetBookInfo","BookMgmt")', type: 'GET', data: { id: bookId },
+            success: function (res) {
+                console.log('[BookMgmt] GetBookInfo response:', res);
+                if (res && res.ErrCode === 1 && res.Data) {
+                    var d = res.Data;
+                    $('#txtISBN13').val(d.ISBN13 || '');
+                    $('#txtTitle').val(d.Title || '');
+                    $('#ddlCategory').val(d.CategoryId || '');
+                    $('#ddlPublisher').val(d.PublisherId || '');
+                    $('#txtPrice').val(d.Price);
+                    $('#txtStock').val(d.Stock);
+                    $('#txtCoverUrl').val(d.CoverUrl || '');
+                    $('#txtDescription').val(d.Description || '');
+                    $('#chkActive').prop('checked', !!d.Active);
+                    $('#chkIsDeleted').prop('checked', !!d.IsDeleted);
+                    var ids = (d.AuthorIds || []).map(function (x) { return String(x); });
+                    $('#ddlAuthors option').each(function () { $(this).prop('selected', ids.indexOf($(this).val()) >= 0); });
+                } else {
+                    showToast((res && res.ErrDesc ? res.ErrDesc : 'Không thể tải thông tin sách') + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : ''), 'error');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('[BookMgmt] GetBookInfo error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                showToast('Có lỗi xảy ra khi tải thông tin sách [HTTP ' + xhr.status + ' ' + error + ']', 'error');
+            }
+        });
+    }
+
+    $('#updateBookForm').on('submit', function (e) {
+        e.preventDefault();
+        var payload = {
+            txt_BookId: bookId,
+            txt_ISBN13: $.trim($('#txtISBN13').val()),
+            txt_Title: $.trim($('#txtTitle').val()),
+            txt_Price: $('#txtPrice').val(),
+            txt_CategoryId: $('#ddlCategory').val() || null,
+            txt_PublisherId: $('#ddlPublisher').val() || null,
+            txt_Stock: $('#txtStock').val() || 0,
+            txt_CoverUrl: $.trim($('#txtCoverUrl').val()),
+            txt_Description: $.trim($('#txtDescription').val()),
+            chk_Active: $('#chkActive').is(':checked'),
+            chk_IsDeleted: $('#chkIsDeleted').is(':checked'),
+            txt_AuthorIds: ($('#ddlAuthors').val() || []).join(',')
+        };
+        if (!bookId || !payload.txt_ISBN13 || !payload.txt_Title || payload.txt_Price === '') { showToast('Vui lòng nhập đầy đủ thông tin sách', 'error'); return; }
+        $('#btnSave').prop('disabled', true).text('Đang lưu...');
+        $.ajax({
+            url: '@Url.Action("Update","BookMgmt")', type: 'POST', data: payload,
+            success: function (res) {
+                console.log('[BookMgmt] Update response:', res);
+                if (res && res.ErrCode === 1) {
+                    showToast(res.ErrDesc || 'Cập nhật sách thành công', 'success');
+                    setTimeout(function () { window.location.href = '@Url.Action("BookList","BookMgmt")'; }, 700);
+                } else {
+                    showToast((res && res.ErrDesc ? res.ErrDesc : 'Cập nhật sách thất bại') + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : ''), 'error');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('[BookMgmt] Update error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                showToast('Có lỗi xảy ra khi cập nhật sách [HTTP ' + xhr.status + ' ' + error + ']', 'error');
+            },
+            complete: function () { $('#btnSave').prop('disabled', false).text('Cập nhật'); }
+        });
+    });
+
+    loadDropdowns().always(loadBook);
+})();
+</script>
+}

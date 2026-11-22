@@ -1,0 +1,187 @@
+﻿@{
+    ViewBag.Title = "Danh sách sách";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6"><h3 class="mb-0">Danh sách sách</h3></div>
+            <div class="col-sm-6 text-end">
+                <a href="@Url.Action("AddBook","BookMgmt")" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm sách</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <input id="txtKeyword" type="text" class="form-control" placeholder="Tìm ISBN, tên, danh mục, NXB..." />
+                    </div>
+                    <div class="col-md-2">
+                        <select id="ddlCategory" class="form-select"><option value="">Tất cả danh mục</option></select>
+                    </div>
+                    <div class="col-md-2">
+                        <select id="ddlPublisher" class="form-select"><option value="">Tất cả NXB</option></select>
+                    </div>
+                    <div class="col-md-2">
+                        <select id="ddlStatus" class="form-select">
+                            <option value="active">Đang bán</option>
+                            <option value="inactive">Ngừng bán</option>
+                            <option value="deleted">Đã xóa</option>
+                            <option value="all">Tất cả</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button id="btnSearch" class="btn btn-primary" type="button">Tìm kiếm</button>
+                        <button id="btnReset" class="btn btn-outline-secondary" type="button">Làm mới</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>ISBN</th>
+                                <th>Tên sách</th>
+                                <th>Danh mục</th>
+                                <th>NXB</th>
+                                <th class="text-end">Giá</th>
+                                <th class="text-end">Tồn</th>
+                                <th>Trạng thái</th>
+                                <th>Cập nhật</th>
+                                <th style="width:150px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookTableBody">
+                            <tr><td colspan="10" class="text-center text-muted">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div id="pagingInfo" class="text-muted small"></div>
+                    <nav><ul class="pagination mb-0" id="pagination"></ul></nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+(function () {
+    var currentPage = 1;
+    function escapeHtml(text) { return $('<div/>').text(text == null ? '' : text).html(); }
+    function formatPrice(v) { return Number(v || 0).toLocaleString('vi-VN'); }
+
+    function loadDropdowns() {
+        $.get('@Url.Action("GetDropdownData","BookMgmt")', function (res) {
+            console.log('[BookMgmt] GetDropdownData response:', res);
+            if (!res || res.ErrCode !== 1 || !res.Data) return;
+            (res.Data.Categories || []).forEach(function (c) { $('#ddlCategory').append('<option value="' + c.Id + '">' + escapeHtml(c.Name) + '</option>'); });
+            (res.Data.Publishers || []).forEach(function (p) { $('#ddlPublisher').append('<option value="' + p.Id + '">' + escapeHtml(p.Name) + '</option>'); });
+        }).fail(function (xhr, status, error) {
+            console.error('[BookMgmt] GetDropdownData error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+        });
+    }
+
+    function loadData(page) {
+        currentPage = page || 1;
+        $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-muted">Đang tải dữ liệu...</td></tr>');
+        $.ajax({
+            url: '@Url.Action("GetBookList","BookMgmt")',
+            type: 'POST',
+            data: {
+                keyword: $('#txtKeyword').val(),
+                categoryId: $('#ddlCategory').val() || null,
+                publisherId: $('#ddlPublisher').val() || null,
+                status: $('#ddlStatus').val(),
+                page: currentPage
+            },
+            success: function (res) {
+                console.log('[BookMgmt] GetBookList response:', res);
+                if (!res || res.ErrCode !== 1 || !res.Data) {
+                    var errText = (res && res.ErrDesc ? res.ErrDesc : 'Không thể tải dữ liệu') + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : '');
+                    $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-danger">' + escapeHtml(errText) + '</td></tr>');
+                    $('#pagination').empty(); $('#pagingInfo').text(''); return;
+                }
+                renderTable(res.Data.Items || []);
+                renderPaging(res.Data);
+            },
+            error: function (xhr, status, error) {
+                console.error('[BookMgmt] GetBookList error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-danger">Có lỗi xảy ra khi tải dữ liệu [HTTP ' + xhr.status + ' ' + error + ']</td></tr>');
+                $('#pagination').empty(); $('#pagingInfo').text('');
+            }
+        });
+    }
+
+    function renderTable(items) {
+        if (!items.length) { $('#bookTableBody').html('<tr><td colspan="10" class="text-center text-muted">Không có sách phù hợp.</td></tr>'); return; }
+        var rows = [];
+        $.each(items, function (_, item) {
+            var badge = item.IsDeleted ? '<span class="badge text-bg-secondary">Đã xóa</span>'
+                : (item.Active ? '<span class="badge text-bg-success">Đang bán</span>' : '<span class="badge text-bg-warning">Ngừng bán</span>');
+            var delBtn = item.IsDeleted ? '' : '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' + item.BookId + '" data-name="' + escapeHtml(item.Title) + '">Xóa</button>';
+            rows.push('<tr>' +
+                '<td>' + item.BookId + '</td>' +
+                '<td>' + escapeHtml(item.ISBN13) + '</td>' +
+                '<td>' + escapeHtml(item.Title) + '</td>' +
+                '<td>' + escapeHtml(item.CategoryName) + '</td>' +
+                '<td>' + escapeHtml(item.PublisherName) + '</td>' +
+                '<td class="text-end">' + formatPrice(item.Price) + '</td>' +
+                '<td class="text-end">' + item.Stock + '</td>' +
+                '<td>' + badge + '</td>' +
+                '<td>' + escapeHtml(item.UpdatedAtUtc) + '</td>' +
+                '<td><a class="btn btn-sm btn-outline-primary me-1" href="@Url.Action("UpdateBook","BookMgmt")?id=' + item.BookId + '">Sửa</a>' + delBtn + '</td>' +
+            '</tr>');
+        });
+        $('#bookTableBody').html(rows.join(''));
+    }
+
+    function renderPaging(data) {
+        var totalRecords = data.TotalRecords || 0, current = data.CurrentPage || 1, totalPages = data.TotalPages || 1;
+        $('#pagingInfo').text('Tổng: ' + totalRecords + ' sách | Trang ' + current + '/' + totalPages);
+        var html = [];
+        html.push('<li class="page-item' + (current <= 1 ? ' disabled' : '') + '"><a class="page-link" href="#" data-page="' + (current - 1) + '">Trước</a></li>');
+        for (var i = Math.max(1, current - 2); i <= Math.min(totalPages, current + 2); i++) {
+            html.push('<li class="page-item' + (i === current ? ' active' : '') + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        }
+        html.push('<li class="page-item' + (current >= totalPages ? ' disabled' : '') + '"><a class="page-link" href="#" data-page="' + (current + 1) + '">Sau</a></li>');
+        $('#pagination').html(html.join(''));
+    }
+
+    $('#btnSearch').on('click', function () { loadData(1); });
+    $('#btnReset').on('click', function () { $('#txtKeyword').val(''); $('#ddlCategory').val(''); $('#ddlPublisher').val(''); $('#ddlStatus').val('active'); loadData(1); });
+    $('#txtKeyword').on('keypress', function (e) { if (e.which === 13) loadData(1); });
+    $('#ddlCategory,#ddlPublisher,#ddlStatus').on('change', function () { loadData(1); });
+    $('#pagination').on('click', 'a.page-link', function (e) { e.preventDefault(); var p = parseInt($(this).data('page'), 10); if (p > 0) loadData(p); });
+
+    $('#bookTableBody').on('click', '.btn-delete', function () {
+        var id = $(this).data('id'), name = $(this).data('name');
+        if (!confirm('Bạn có chắc muốn xóa sách "' + name + '"?')) return;
+        $.ajax({
+            url: '@Url.Action("Delete","BookMgmt")', type: 'POST', data: { id: id },
+            success: function (res) {
+                console.log('[BookMgmt] Delete response:', res);
+                if (res && res.ErrCode === 1) { showToast(res.ErrDesc || 'Xóa sách thành công', 'success'); loadData(currentPage); }
+                else { showToast((res && res.ErrDesc ? res.ErrDesc : 'Xóa sách thất bại') + (res && res.ErrCode !== undefined ? ' [ErrCode: ' + res.ErrCode + ']' : ''), 'error'); }
+            },
+            error: function (xhr, status, error) {
+                console.error('[BookMgmt] Delete error:', { status: status, error: error, httpStatus: xhr.status, responseText: xhr.responseText });
+                showToast('Có lỗi xảy ra khi xóa sách [HTTP ' + xhr.status + ' ' + error + ']', 'error');
+            }
+        });
+    });
+
+    loadDropdowns();
+    loadData(1);
+})();
+</script>
+}

@@ -140,7 +140,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Database.dbml</DependentUpon>
     </Compile>
+    <Compile Include="Business\BookMgmt_ctrl.cs" />
     <Compile Include="Business\CategoryMgmt_ctrl.cs" />
+    <Compile Include="Controllers\BookMgmtController.cs" />
     <Compile Include="Controllers\CategoryMgmtController.cs" />
     <Compile Include="Models\Database.cs" />
     <Compile Include="Models\FunctResult.cs" />
@@ -434,6 +436,9 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Shared\_AdminLayout.cshtml" />
     <Content Include="Views\Book\_bookListContent.cshtml" />
+    <Content Include="Views\BookMgmt\AddBook.cshtml" />
+    <Content Include="Views\BookMgmt\BookList.cshtml" />
+    <Content Include="Views\BookMgmt\UpdateBook.cshtml" />
     <Content Include="Views\CategoryMgmt\AddCategory.cshtml" />
     <Content Include="Views\CategoryMgmt\CategoryList.cshtml" />
     <Content Include="Views\CategoryMgmt\UpdateCategory.cshtml" />
