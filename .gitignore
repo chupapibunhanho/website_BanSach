@@ -5,3 +5,4 @@ webstie_BanSach/.vs/
 **/obj/
 *.suo
 *.user
+/webstie_BanSach/ConnectionStrings.local.config
