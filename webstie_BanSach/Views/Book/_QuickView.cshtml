@@ -1,0 +1,20 @@
+@model webstie_BanSach.ViewModels.QuickViewModel
+@{ var book = Model.Book; var fallback = Url.Content("~/Content/Images/default-book.jpg"); }
+<div class="quick-view row g-4">
+    <div class="col-md-4"><img class="quick-view__cover" src="@(string.IsNullOrWhiteSpace(book.CoverUrl) ? fallback : Url.Content(book.CoverUrl))" data-fallback="@fallback" alt="Bìa sách @book.Title" /></div>
+    <div class="col-md-8">
+        <h3 class="h4">@book.Title</h3>
+        <p class="text-muted mb-1">Tác giả: @(string.IsNullOrWhiteSpace(Model.Authors) ? "Chưa có thông tin" : Model.Authors)</p>
+        <p class="text-muted mb-1">Nhà xuất bản: @(string.IsNullOrWhiteSpace(Model.Publisher) ? "Chưa có thông tin" : Model.Publisher)</p>
+        <p class="text-muted mb-2">Danh mục: @(string.IsNullOrWhiteSpace(Model.Category) ? "Chưa có thông tin" : Model.Category)</p>
+        <p class="mb-2"><i class="bi bi-star-fill text-warning" aria-hidden="true"></i> @(book.RatingCount > 0 ? String.Format("{0:0.0}/5 ({1} đánh giá)", book.AverageRating, book.RatingCount) : "Chưa có đánh giá") · Đã bán @String.Format("{0:N0}", book.SoldCount)</p>
+        <p class="quick-view__price">@String.Format("{0:N0} ₫", book.Price)</p>
+        <p>@(book.Stock <= 0 ? "Hết hàng" : "Còn " + book.Stock + " sản phẩm")</p>
+        <p class="quick-view__description">@(string.IsNullOrWhiteSpace(book.Description) ? "Chưa có mô tả." : book.Description)</p>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary" data-book-id="@book.BookId" disabled>@(book.Stock <= 0 ? "Hết hàng" : "Thêm vào giỏ")</button>
+            <button type="button" class="btn btn-outline-secondary" data-wishlist-id="@book.BookId" disabled>Yêu thích</button>
+            <button type="button" class="btn btn-outline-primary" data-book-id="@book.BookId" disabled>Xem chi tiết</button>
+        </div>
+    </div>
+</div>

@@ -20,5 +20,14 @@ namespace webstie_BanSach.ViewModels
         public int TotalPages { get; set; }
         public int TotalCount { get; set; }
         public int AllBooksCount { get; set; }
+        public Book BannerBook { get; set; }
+    }
+
+    public class QuickViewModel
+    {
+        public Book Book { get; set; }
+        public string Authors { get; set; }
+        public string Publisher { get; set; }
+        public string Category { get; set; }
     }
 }

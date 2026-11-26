@@ -33,9 +33,17 @@ namespace webstie_BanSach.Controllers
                 page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
                 var books = query.OrderByDescending(b => b.CreatedAtUtc).ThenByDescending(b => b.BookId)
                     .Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                var bannerQuery = query.Where(b => b.CoverUrl != null && b.CoverUrl != "").OrderBy(b => b.BookId);
+                var bannerCount = bannerQuery.Count();
+                var day = (long)(DateTime.UtcNow.AddHours(7).Date - new DateTime(2000, 1, 1)).TotalDays;
+                var banner = bannerCount == 0 ? null : bannerQuery.Skip((int)((day % bannerCount + bannerCount) % bannerCount)).FirstOrDefault();
                 var ids = books.Select(b => b.BookId).ToList();
                 if (ids.Count > 0)
                 {
+                    var authors = (from ba in db.BookAuthors join author in db.Authors on ba.AuthorId equals author.AuthorId
+                                   where ids.Contains(ba.BookId) && !author.IsDeleted
+                                   select new { ba.BookId, author.AuthorName }).ToList()
+                                  .GroupBy(a => a.BookId).ToDictionary(g => g.Key, g => string.Join(", ", g.Select(a => a.AuthorName).Distinct()));
                     var ratings = db.BookReviews.Where(r => !r.IsDeleted && r.Rating > 0 && ids.Contains(r.BookId))
                         .GroupBy(r => r.BookId).Select(g => new { Id = g.Key, Average = g.Average(r => (double)r.Rating), Count = g.Count() })
                         .ToDictionary(r => r.Id);
@@ -55,11 +63,35 @@ namespace webstie_BanSach.Controllers
                         book.SoldCount = sales.TryGetValue(book.BookId, out var sold) ? sold.Total : 0;
                         var rank = top.IndexOf(book.BookId);
                         if (rank >= 0) book.SalesRank = rank + 1;
+                        book.AuthorNames = authors.TryGetValue(book.BookId, out var names) ? names : null;
                     }
                 }
-                return View(new BookListViewModel { Books = books, Categories = categories, SelectedCategoryId = categoryId,
+                var model = new BookListViewModel { Books = books, Categories = categories, SelectedCategoryId = categoryId,
                     SelectedCategoryName = category == null ? null : category.Name, PageNumber = page,
-                    TotalPages = totalPages, TotalCount = count, AllBooksCount = allCount });
+                    TotalPages = totalPages, TotalCount = count, AllBooksCount = allCount, BannerBook = banner };
+                if (Request.IsAjaxRequest()) return PartialView("_BookListContent", model);
+                return View(model);
+            }
+        }
+
+        [HttpGet]
+        public ActionResult QuickView(long id)
+        {
+            using (var db = new DatabaseDataContext())
+            {
+                var book = db.Books.FirstOrDefault(b => b.BookId == id && b.Active && !b.IsDeleted);
+                if (book == null) return HttpNotFound();
+                var names = (from ba in db.BookAuthors join a in db.Authors on ba.AuthorId equals a.AuthorId
+                             where ba.BookId == id && !a.IsDeleted select a.AuthorName).ToList();
+                var ratings = db.BookReviews.Where(r => r.BookId == id && !r.IsDeleted && r.Rating > 0);
+                book.RatingCount = ratings.Count();
+                book.AverageRating = book.RatingCount > 0 ? ratings.Average(r => (double)r.Rating) : 0;
+                book.SoldCount = (from item in db.OrderItems join order in db.Orders on item.OrderId equals order.OrderId
+                                  where item.BookId == id && order.StatusCode == "COMPLETED"
+                                  select (long?)item.Quantity).Sum() ?? 0;
+                var category = db.Categories.Where(c => c.CategoryId == book.CategoryId && !c.IsDeleted).Select(c => c.Name).FirstOrDefault();
+                var publisher = db.Publishers.Where(p => p.PublisherId == book.PublisherId && !p.IsDeleted).Select(p => p.PublisherName).FirstOrDefault();
+                return PartialView("_QuickView", new QuickViewModel { Book = book, Authors = string.Join(", ", names), Category = category, Publisher = publisher });
             }
         }
     }

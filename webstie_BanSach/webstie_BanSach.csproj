@@ -404,6 +404,7 @@
     <Content Include="Content\Images\Carousel_3.jpg" />
     <Content Include="Content\Images\default-book.jpg" />
     <Content Include="Scripts\home.js" />
+    <Content Include="Scripts\book-index.js" />
     <Content Include="Scripts\adminlte.js" />
     <Content Include="Scripts\adminlte.min.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
@@ -455,6 +456,8 @@
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Book\Index.cshtml" />
+    <Content Include="Views\Book\_BookListContent.cshtml" />
+    <Content Include="Views\Book\_QuickView.cshtml" />
     <Content Include="Views\Home\Partials\_HeroCarousel.cshtml" />
     <Content Include="Views\Home\Partials\_BestSellers.cshtml" />
     <Content Include="Views\Home\Partials\_BestSellersList.cshtml" />

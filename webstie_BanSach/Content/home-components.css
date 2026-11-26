@@ -199,6 +199,7 @@
 .book-card .btn-add-to-cart span { min-width: 0; }
 .book-card .card-actions .wishlist-btn { flex: 0 0 38px; width: 38px; padding: 0; }
 .book-card .wishlist-btn .bi { padding: 0; }
+.book-card__author, .book-card__description { display: none; }
 
 .book-card__cover { position: relative; overflow: hidden; border-radius: var(--bs-card-inner-border-radius, 0.375rem) var(--bs-card-inner-border-radius, 0.375rem) 0 0; }
 .book-card__cover .book-card__img { display: block; transition: transform .25s ease; }
