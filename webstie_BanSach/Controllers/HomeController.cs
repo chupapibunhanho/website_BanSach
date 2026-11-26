@@ -167,6 +167,20 @@ namespace webstie_BanSach.Controllers
                  select items.Key).Take(10).ToList());
         }
 
+        internal static List<SelectListItem> Authors(DatabaseDataContext db)
+        {
+            return GetOrCreate("customer:authors:v1", 60, () => db.Authors.Where(a => !a.IsDeleted).OrderBy(a => a.AuthorName)
+                .Select(a => new { a.AuthorId, a.AuthorName }).ToList()
+                .Select(a => new SelectListItem { Value = a.AuthorId.ToString(), Text = a.AuthorName }).ToList());
+        }
+
+        internal static List<SelectListItem> Publishers(DatabaseDataContext db)
+        {
+            return GetOrCreate("customer:publishers:v1", 60, () => db.Publishers.Where(p => !p.IsDeleted).OrderBy(p => p.PublisherName)
+                .Select(p => new { p.PublisherId, p.PublisherName }).ToList()
+                .Select(p => new SelectListItem { Value = p.PublisherId.ToString(), Text = p.PublisherName }).ToList());
+        }
+
         internal static List<Book> Banner(DatabaseDataContext db, int? categoryId, bool onlyInStock)
         {
             var date = DateTime.UtcNow.AddHours(7).Date;

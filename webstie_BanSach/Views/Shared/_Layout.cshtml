@@ -19,6 +19,8 @@
     </div>
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
+    <div class="modal fade" id="searchQuickModal" tabindex="-1" aria-labelledby="searchQuickTitle" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="searchQuickTitle">Xem nhanh sách</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body" id="searchQuickBody"></div></div></div></div>
+    <script src="@Url.Content("~/Scripts/customer-search.js")"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

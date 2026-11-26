@@ -79,17 +79,29 @@
             quickRequest.fail(function (xhr, status) { if (status !== 'abort') modalBody.textContent = xhr.status === 404 ? 'Sách không còn tồn tại hoặc không được bán.' : 'Không thể tải thông tin sách. Vui lòng thử lại.'; });
             return;
         }
-        var link = event.target.closest('.book-categories a, .pager a');
+        var link = event.target.closest('.book-categories a, .pager a, .filter-summary a, .book-empty a, .modal-footer a');
         if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-        event.preventDefault(); load(link.href, true, !!link.closest('.pager'));
+        event.preventDefault();
+        var modalForLink = link.closest('.modal');
+        if (modalForLink && window.bootstrap && bootstrap.Modal.getInstance(modalForLink)) {
+            var href = link.href;
+            modalForLink.addEventListener('hidden.bs.modal', function () { load(href, true, true); }, { once: true });
+            bootstrap.Modal.getInstance(modalForLink).hide();
+        } else load(link.href, true, !!link.closest('.pager'));
     });
     region.addEventListener('submit', function (event) {
-        var form = event.target.closest('.pager-jump');
+        var form = event.target.closest('.pager-jump, .book-filter-form, .book-sort-form');
         if (!form) return;
         event.preventDefault();
         var params = new URLSearchParams(new FormData(form));
-        load(form.action + '?' + params.toString(), true, true);
+        var url = form.action + '?' + params.toString();
+        var filterModal = form.closest('.modal');
+        if (filterModal && window.bootstrap && bootstrap.Modal.getInstance(filterModal)) {
+            filterModal.addEventListener('hidden.bs.modal', function () { load(url, true, true); }, { once: true });
+            bootstrap.Modal.getInstance(filterModal).hide();
+        } else load(url, true, true);
     });
+    region.addEventListener('change', function (event) { if (event.target.id === 'book-sort') event.target.form.requestSubmit(); });
     document.getElementById('book-load-retry').addEventListener('click', function () { if (retryUrl) load(retryUrl, retryPush, retryScroll); });
     window.addEventListener('popstate', function () { load(window.location.href, false); });
     modalElement.addEventListener('hidden.bs.modal', function () {

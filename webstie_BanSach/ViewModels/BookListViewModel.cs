@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Web.Mvc;
 using webstie_BanSach.Models;
 
 namespace webstie_BanSach.ViewModels
@@ -23,6 +24,16 @@ namespace webstie_BanSach.ViewModels
         public int AllBooksCount { get; set; }
         public string SelectedCategoryCode { get; set; }
         public List<Book> BannerBooks { get; set; }
+        public string SearchTerm { get; set; }
+        public int? AuthorId { get; set; }
+        public int? PublisherId { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public int? MinRating { get; set; }
+        public string Stock { get; set; }
+        public string Sort { get; set; }
+        public List<SelectListItem> Authors { get; set; }
+        public List<SelectListItem> Publishers { get; set; }
     }
 
     public class QuickViewModel

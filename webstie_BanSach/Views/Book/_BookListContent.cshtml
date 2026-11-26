@@ -22,6 +22,8 @@
     if (Model.SelectedCategoryId.HasValue) { query["categoryId"] = Model.SelectedCategoryId.Value; }
     else { query.Remove("categoryId"); }
     Func<int, string> pageUrl = p => { query["page"] = p; return Url.Action("Index", "Book", query); };
+    Func<string, string> removeFilter = key => { var r = new System.Web.Routing.RouteValueDictionary(query); r.Remove("page"); r.Remove(key); return Url.Action("Index", "Book", r); };
+    Func<int?, string> categoryUrl = id => { var r = new System.Web.Routing.RouteValueDictionary(query); r.Remove("page"); r.Remove("categoryId"); if (id.HasValue) { r["categoryId"] = id.Value; } return Url.Action("Index", "Book", r); };
     var totalPages = Math.Max(1, Model.TotalPages);
     var firstItem = Model.TotalCount == 0 ? 0 : (Model.PageNumber - 1) * 20 + 1;
     var lastItem = Math.Min(Model.PageNumber * 20, Model.TotalCount);
@@ -48,20 +50,41 @@
     </section>
     <div class="d-flex flex-wrap justify-content-between align-items-start align-items-md-center gap-3 mb-3">
         <div><h2 class="mb-1">Danh mục sách</h2><p class="text-muted mb-0">Khám phá sách theo thể loại.</p></div>
-        <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2" title="Bộ lọc sẽ được triển khai sau" disabled><i class="bi bi-funnel" aria-hidden="true"></i><span>Bộ lọc</span></button>
+        <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#bookFilterModal"><i class="bi bi-funnel" aria-hidden="true"></i><span>Bộ lọc</span></button>
     </div>
     <nav class="book-categories d-flex flex-wrap gap-2 mb-3" aria-label="Danh mục sách">
-        <a class="filter-chip text-decoration-none @(Model.SelectedCategoryId == null ? "active" : "")" href="@Url.Action("Index", "Book")">Tất cả (@Model.AllBooksCount)</a>
+        <a class="filter-chip text-decoration-none @(Model.SelectedCategoryId == null ? "active" : "")" href="@categoryUrl(null)">Tất cả (@Model.AllBooksCount)</a>
         @foreach (var category in Model.Categories)
         {
-            <a class="filter-chip text-decoration-none @(Model.SelectedCategoryId == category.CategoryId ? "active" : "")" href="@Url.Action("Index", "Book", new { categoryId = category.CategoryId })">@category.Name (@category.Count)</a>
+            <a class="filter-chip text-decoration-none @(Model.SelectedCategoryId == category.CategoryId ? "active" : "")" href="@categoryUrl(category.CategoryId)">@category.Name (@category.Count)</a>
         }
     </nav>
     <div id="book-results" class="d-flex flex-wrap filter-summary mb-3">
-        @if (Model.SelectedCategoryId.HasValue) { <span class="chip"><i class="bi bi-bookmark" aria-hidden="true"></i> @Model.SelectedCategoryName</span> }
+        @if (!string.IsNullOrEmpty(Model.SearchTerm)) { <span class="chip">Từ khóa: @Model.SearchTerm <a href="@removeFilter("q")" aria-label="Xóa từ khóa">×</a></span> }
+        @if (Model.SelectedCategoryId.HasValue) { <span class="chip">@Model.SelectedCategoryName <a href="@removeFilter("categoryId")" aria-label="Xóa danh mục">×</a></span> }
+        @if (Model.AuthorId.HasValue) { <span class="chip">Tác giả: @(Model.Authors.FirstOrDefault(a => a.Value == Model.AuthorId.ToString())?.Text ?? Model.AuthorId.ToString()) <a href="@removeFilter("authorId")" aria-label="Xóa tác giả">×</a></span> }
+        @if (Model.PublisherId.HasValue) { <span class="chip">NXB: @(Model.Publishers.FirstOrDefault(a => a.Value == Model.PublisherId.ToString())?.Text ?? Model.PublisherId.ToString()) <a href="@removeFilter("publisherId")" aria-label="Xóa nhà xuất bản">×</a></span> }
+        @if (Model.MinPrice.HasValue) { <span class="chip">Từ @String.Format("{0:N0}", Model.MinPrice) ₫ <a href="@removeFilter("minPrice")" aria-label="Xóa giá tối thiểu">×</a></span> }
+        @if (Model.MaxPrice.HasValue) { <span class="chip">Đến @String.Format("{0:N0}", Model.MaxPrice) ₫ <a href="@removeFilter("maxPrice")" aria-label="Xóa giá tối đa">×</a></span> }
+        @if (Model.MinRating.HasValue) { <span class="chip">Từ @Model.MinRating sao <a href="@removeFilter("minRating")" aria-label="Xóa đánh giá">×</a></span> }
+        @if (!string.IsNullOrEmpty(Model.Stock)) { <span class="chip">@(Model.Stock == "in" ? "Còn hàng" : "Hết hàng") <a href="@removeFilter("stock")" aria-label="Xóa trạng thái kho">×</a></span> }
         <span class="chip bg-light text-muted"><i class="bi bi-search" aria-hidden="true"></i> @Model.TotalCount kết quả</span>
     </div>
     <div class="book-view-controls mb-3" role="group" aria-label="Chế độ hiển thị">
+        <form class="book-sort-form" method="get" action="@Url.Action("Index", "Book")">
+            @foreach (var entry in query.Where(x => x.Key != "page" && x.Key != "sort")) { <input type="hidden" name="@entry.Key" value="@entry.Value" /> }
+            <label for="book-sort">Sắp xếp</label>
+            <select name="sort" id="book-sort" class="form-select form-select-sm">
+                <option value="" @(Model.Sort == "" ? "selected" : "")>Mặc định</option>
+                <option value="newest" @(Model.Sort == "newest" ? "selected" : "")>Mới nhất</option>
+                <option value="bestselling" @(Model.Sort == "bestselling" ? "selected" : "")>Bán chạy nhất</option>
+                <option value="price_asc" @(Model.Sort == "price_asc" ? "selected" : "")>Giá thấp đến cao</option>
+                <option value="price_desc" @(Model.Sort == "price_desc" ? "selected" : "")>Giá cao đến thấp</option>
+                <option value="rating" @(Model.Sort == "rating" ? "selected" : "")>Đánh giá cao nhất</option>
+                <option value="title_asc" @(Model.Sort == "title_asc" ? "selected" : "")>Tên A–Z</option>
+                <option value="title_desc" @(Model.Sort == "title_desc" ? "selected" : "")>Tên Z–A</option>
+            </select><button type="submit" class="btn btn-sm btn-outline-primary">Áp dụng</button>
+        </form>
         <button type="button" class="btn btn-outline-primary" data-view-mode="grid" aria-label="Dạng lưới" aria-pressed="true"><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i></button>
         <button type="button" class="btn btn-outline-primary" data-view-mode="list" aria-label="Dạng danh sách" aria-pressed="false"><i class="bi bi-list-ul" aria-hidden="true"></i></button>
     </div>
@@ -71,7 +94,7 @@
             @foreach (var book in Model.Books) { @Html.Partial("_BookCard", book) }
         </div>
     }
-    else { <p class="text-muted">Chưa có sách trong danh mục này.</p> }
+    else { <div class="book-empty text-center py-5"><i class="bi bi-search" aria-hidden="true"></i><h3 class="h5">Không tìm thấy sách phù hợp</h3>@if (!string.IsNullOrEmpty(Model.SearchTerm)) { <p>Từ khóa: <strong>@Model.SearchTerm</strong></p> }<p class="text-muted">Hãy kiểm tra chính tả hoặc giảm bớt điều kiện lọc.</p><a class="btn btn-outline-primary" href="@Url.Action("Index", "Book")">Xóa bộ lọc và xem tất cả sách</a></div> }
     <div class="pagination-summary mt-4">Đang xem @firstItem–@lastItem trên tổng số @Model.TotalCount đầu sách</div>
     <nav class="mt-3 pager" aria-label="Phân trang">
         @if (Model.PageNumber > 1) { <a class="page-link" href="@pageUrl(1)" aria-label="Trang đầu"><i class="bi bi-chevron-double-left" aria-hidden="true"></i></a><a class="page-link" href="@pageUrl(Model.PageNumber - 1)" aria-label="Trang trước"><i class="bi bi-chevron-left" aria-hidden="true"></i></a> }
@@ -91,4 +114,20 @@
             <label for="jump-page">Đến trang</label><input id="jump-page" name="page" type="number" min="1" max="@totalPages" value="@Model.PageNumber" required /><button class="btn btn-outline-primary btn-sm" type="submit">Đi</button>
         </form> }
     </div>
+    <div class="modal fade modal-filter" id="bookFilterModal" tabindex="-1" aria-labelledby="bookFilterTitle" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+        <form class="book-filter-form" method="get" action="@Url.Action("Index", "Book")">
+            <div class="modal-header"><h2 class="modal-title fs-5" id="bookFilterTitle">Bộ lọc sách</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+            <div class="modal-body"><div class="row g-3">
+                @if (!string.IsNullOrEmpty(Model.SearchTerm)) { <input type="hidden" name="q" value="@Model.SearchTerm" /> }
+                @if (!string.IsNullOrEmpty(Model.Sort)) { <input type="hidden" name="sort" value="@Model.Sort" /> }
+                <div class="col-md-6"><label for="filter-category" class="form-label">Danh mục</label><select id="filter-category" name="categoryId" class="form-select"><option value="">Tất cả</option>@foreach (var c in Model.Categories) { <option value="@c.CategoryId" @(c.CategoryId == Model.SelectedCategoryId ? "selected" : "")>@c.Name</option> }</select></div>
+                <div class="col-md-6"><label for="filter-author" class="form-label">Tác giả</label><select id="filter-author" name="authorId" class="form-select"><option value="">Tất cả</option>@foreach (var a in Model.Authors) { <option value="@a.Value" @(a.Value == Model.AuthorId.ToString() ? "selected" : "")>@a.Text</option> }</select></div>
+                <div class="col-md-6"><label for="filter-publisher" class="form-label">Nhà xuất bản</label><select id="filter-publisher" name="publisherId" class="form-select"><option value="">Tất cả</option>@foreach (var p in Model.Publishers) { <option value="@p.Value" @(p.Value == Model.PublisherId.ToString() ? "selected" : "")>@p.Text</option> }</select></div>
+                <div class="col-md-3"><label for="filter-min" class="form-label">Giá từ</label><input id="filter-min" name="minPrice" type="number" min="0" step="1" class="form-control" value="@(Model.MinPrice.HasValue ? Model.MinPrice.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "")" /></div>
+                <div class="col-md-3"><label for="filter-max" class="form-label">Giá đến</label><input id="filter-max" name="maxPrice" type="number" min="0" step="1" class="form-control" value="@(Model.MaxPrice.HasValue ? Model.MaxPrice.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "")" /></div>
+                <div class="col-md-6"><label for="filter-rating" class="form-label">Đánh giá</label><select id="filter-rating" name="minRating" class="form-select"><option value="">Tất cả</option>@for (var r = 1; r <= 5; r++) { <option value="@r" @(Model.MinRating == r ? "selected" : "")>Từ @r sao</option> }</select></div>
+                <div class="col-md-6"><label for="filter-stock" class="form-label">Tồn kho</label><select id="filter-stock" name="stock" class="form-select"><option value="">Tất cả</option><option value="in" @(Model.Stock == "in" ? "selected" : "")>Còn hàng</option><option value="out" @(Model.Stock == "out" ? "selected" : "")>Hết hàng</option></select></div>
+            </div></div><div class="modal-footer"><a class="btn btn-light" href="@Url.Action("Index", "Book", new { q = Model.SearchTerm, sort = Model.Sort })">Đặt lại bộ lọc</a><button class="btn btn-primary" type="submit">Áp dụng</button></div>
+        </form>
+    </div></div></div>
 </div>

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web.Mvc;
 using webstie_BanSach.Models;
 using webstie_BanSach.ViewModels;
@@ -9,9 +11,23 @@ namespace webstie_BanSach.Controllers
     public class BookController : Controller
     {
         [HttpGet]
-        public ActionResult Index(int? categoryId, int page = 1)
+        public ActionResult Index(int? categoryId, int page = 1, string q = null, int? authorId = null, int? publisherId = null,
+            decimal? minPrice = null, decimal? maxPrice = null, int? minRating = null, string stock = null, string sort = null)
         {
             if (!ModelState.IsValid) return new HttpStatusCodeResult(400);
+            q = NormalizeSearch(q);
+            stock = (stock ?? "").Trim().ToLowerInvariant();
+            sort = (sort ?? "").Trim().ToLowerInvariant();
+            var orders = new Dictionary<string, string> {
+                { "", "b.CreatedAtUtc DESC, b.BookId DESC" }, { "newest", "b.CreatedAtUtc DESC, b.BookId DESC" },
+                { "bestselling", "COALESCE((SELECT SUM(CONVERT(bigint, oi.Quantity)) FROM dbo.OrderItems oi JOIN dbo.Orders o ON o.OrderId=oi.OrderId WHERE oi.BookId=b.BookId AND o.StatusCode='COMPLETED'),0) DESC, b.BookId DESC" },
+                { "price_asc", "b.Price ASC, b.BookId DESC" }, { "price_desc", "b.Price DESC, b.BookId DESC" },
+                { "rating", "COALESCE((SELECT AVG(CONVERT(float,r.Rating)) FROM dbo.BookReviews r WHERE r.BookId=b.BookId AND r.IsDeleted=0 AND r.Rating>0),0) DESC, b.BookId DESC" },
+                { "title_asc", "b.Title COLLATE Latin1_General_100_CI_AI ASC, b.BookId DESC" }, { "title_desc", "b.Title COLLATE Latin1_General_100_CI_AI DESC, b.BookId DESC" }
+            };
+            if (q.Length > 200 || !orders.ContainsKey(sort) || (stock != "" && stock != "in" && stock != "out") ||
+                minPrice < 0 || maxPrice < 0 || (minPrice.HasValue && maxPrice.HasValue && minPrice > maxPrice) ||
+                (minRating.HasValue && (minRating < 1 || minRating > 5))) return new HttpStatusCodeResult(400);
             const int pageSize = 20;
             using (var db = new DatabaseDataContext())
             {
@@ -27,12 +43,31 @@ namespace webstie_BanSach.Controllers
 
                 var allBooks = db.Books.Where(b => b.Active && !b.IsDeleted);
                 var allCount = counts.Sum(c => c.Count);
-                var query = categoryId.HasValue ? allBooks.Where(b => b.CategoryId == categoryId.Value) : allBooks;
-                var count = categoryId.HasValue ? category.Count : allCount;
+                var args = new List<object>();
+                Func<object, string> parameter = value => { args.Add(value); return "{" + (args.Count - 1) + "}"; };
+                var where = " WHERE b.Active=1 AND b.IsDeleted=0";
+                if (categoryId.HasValue) where += " AND b.CategoryId=" + parameter(categoryId.Value);
+                if (authorId.HasValue) where += " AND EXISTS (SELECT 1 FROM dbo.BookAuthors ba JOIN dbo.Authors a ON a.AuthorId=ba.AuthorId WHERE ba.BookId=b.BookId AND a.IsDeleted=0 AND a.AuthorId=" + parameter(authorId.Value) + ")";
+                if (publisherId.HasValue) where += " AND b.PublisherId=" + parameter(publisherId.Value);
+                if (minPrice.HasValue) where += " AND b.Price >= " + parameter(minPrice.Value);
+                if (maxPrice.HasValue) where += " AND b.Price <= " + parameter(maxPrice.Value);
+                if (minRating.HasValue) where += " AND COALESCE((SELECT AVG(CONVERT(float,r.Rating)) FROM dbo.BookReviews r WHERE r.BookId=b.BookId AND r.IsDeleted=0 AND r.Rating>0),0) >= " + parameter(minRating.Value);
+                if (stock == "in") where += " AND b.Stock > 0";
+                if (stock == "out") where += " AND b.Stock <= 0";
+                if (q.Length > 0)
+                {
+                    var pattern = parameter("%" + EscapeLike(q) + "%");
+                    where += " AND (REPLACE(REPLACE(b.Title,N'  ',N' '),N'  ',N' ') COLLATE Latin1_General_100_CI_AI LIKE " + pattern + " ESCAPE N'~'" +
+                             " OR b.ISBN13 COLLATE Latin1_General_100_CI_AI LIKE " + pattern + " ESCAPE N'~'" +
+                             " OR EXISTS (SELECT 1 FROM dbo.BookAuthors ba JOIN dbo.Authors a ON a.AuthorId=ba.AuthorId WHERE ba.BookId=b.BookId AND a.IsDeleted=0 AND REPLACE(REPLACE(a.AuthorName,N'  ',N' '),N'  ',N' ') COLLATE Latin1_General_100_CI_AI LIKE " + pattern + " ESCAPE N'~'))";
+                }
+                var count = db.ExecuteQuery<int>("SELECT COUNT(*) FROM dbo.Books b" + where, args.ToArray()).Single();
                 var totalPages = (int)Math.Ceiling(count / (double)pageSize);
                 page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
-                var books = query.OrderByDescending(b => b.CreatedAtUtc).ThenByDescending(b => b.BookId)
-                    .Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                var offset = parameter((page - 1) * pageSize);
+                var limit = parameter(pageSize);
+                var pageIds = db.ExecuteQuery<long>("SELECT b.BookId FROM dbo.Books b" + where + " ORDER BY " + orders[sort] + " OFFSET " + offset + " ROWS FETCH NEXT " + limit + " ROWS ONLY", args.ToArray()).ToList();
+                var books = allBooks.Where(b => pageIds.Contains(b.BookId)).ToList().OrderBy(b => pageIds.IndexOf(b.BookId)).ToList();
                 var banner = CustomerCache.Banner(db, categoryId, false);
                 var ids = books.Select(b => b.BookId).ToList();
                 if (ids.Count > 0)
@@ -60,9 +95,34 @@ namespace webstie_BanSach.Controllers
                 }
                 var model = new BookListViewModel { Books = books, Categories = categories, SelectedCategoryId = categoryId,
                     SelectedCategoryName = category == null ? null : category.Name, PageNumber = page,
-                    TotalPages = totalPages, TotalCount = count, AllBooksCount = allCount, SelectedCategoryCode = category == null ? null : category.Code, BannerBooks = banner };
+                    TotalPages = totalPages, TotalCount = count, AllBooksCount = allCount, SelectedCategoryCode = category == null ? null : category.Code, BannerBooks = banner,
+                    SearchTerm = q, AuthorId = authorId, PublisherId = publisherId, MinPrice = minPrice, MaxPrice = maxPrice, MinRating = minRating, Stock = stock, Sort = sort,
+                    Authors = CustomerCache.Authors(db), Publishers = CustomerCache.Publishers(db) };
                 if (Request.IsAjaxRequest()) return PartialView("_BookListContent", model);
                 return View(model);
+            }
+        }
+
+        private static string NormalizeSearch(string text) { return Regex.Replace((text ?? "").Trim(), @"\s+", " "); }
+        private static string EscapeLike(string text) { return text.Replace("~", "~~").Replace("%", "~%").Replace("_", "~_").Replace("[", "~["); }
+
+        [HttpGet]
+        public ActionResult Search(string q)
+        {
+            q = NormalizeSearch(q);
+            if (q.Length < 2 || q.Length > 200) return Json(new object[0], JsonRequestBehavior.AllowGet);
+            using (var db = new DatabaseDataContext())
+            {
+                var pattern = "%" + EscapeLike(q) + "%";
+                var ids = db.ExecuteQuery<long>("SELECT TOP (5) b.BookId FROM dbo.Books b WHERE b.Active=1 AND b.IsDeleted=0 AND (REPLACE(REPLACE(b.Title,N'  ',N' '),N'  ',N' ') COLLATE Latin1_General_100_CI_AI LIKE {0} ESCAPE N'~' OR b.ISBN13 COLLATE Latin1_General_100_CI_AI LIKE {0} ESCAPE N'~' OR EXISTS (SELECT 1 FROM dbo.BookAuthors ba JOIN dbo.Authors a ON a.AuthorId=ba.AuthorId WHERE ba.BookId=b.BookId AND a.IsDeleted=0 AND REPLACE(REPLACE(a.AuthorName,N'  ',N' '),N'  ',N' ') COLLATE Latin1_General_100_CI_AI LIKE {0} ESCAPE N'~')) ORDER BY b.CreatedAtUtc DESC,b.BookId DESC", pattern).ToList();
+                var books = db.Books.Where(b => ids.Contains(b.BookId) && b.Active && !b.IsDeleted).Select(b => new { b.BookId, b.Title, b.CoverUrl, b.Price }).ToList();
+                var authors = (from ba in db.BookAuthors join a in db.Authors on ba.AuthorId equals a.AuthorId
+                               where ids.Contains(ba.BookId) && !a.IsDeleted select new { ba.BookId, a.AuthorName }).ToList()
+                              .GroupBy(x => x.BookId).ToDictionary(g => g.Key, g => string.Join(", ", g.Select(x => x.AuthorName).Distinct()));
+                var result = books.OrderBy(b => ids.IndexOf(b.BookId)).Select(b => new { id = b.BookId, title = b.Title,
+                    cover = string.IsNullOrWhiteSpace(b.CoverUrl) ? Url.Content("~/Content/Images/default-book.jpg") : Url.Content(b.CoverUrl),
+                    price = b.Price, authors = authors.TryGetValue(b.BookId, out var name) ? name : "" }).ToList();
+                return Json(result, JsonRequestBehavior.AllowGet);
             }
         }
 

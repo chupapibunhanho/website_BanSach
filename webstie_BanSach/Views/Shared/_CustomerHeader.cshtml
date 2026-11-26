@@ -7,12 +7,13 @@
     <div class="container customer-header__inner py-2">
         <a class="customer-brand" href="@Url.Action("Index", "Home")">Bookstore</a>
         @* Các điều khiển chưa có backend sẽ được kết nối ở giai đoạn tương ứng. *@
-        <div class="customer-search" role="search" aria-label="Tìm kiếm sách">
+        <form class="customer-search" role="search" aria-label="Tìm kiếm sách" method="get" action="@Url.Action("Index", "Book")" data-search-url="@Url.Action("Search", "Book")" data-quick-url="@Url.Action("QuickView", "Book")" data-fallback="@Url.Content("~/Content/Images/default-book.jpg")">
             <div class="input-group">
-                <input type="search" name="q" class="form-control" placeholder="Tìm sách, tác giả, ISBN..." aria-label="Tìm sách" disabled />
-                <button class="btn btn-primary" type="button" aria-label="Tìm kiếm" title="Chức năng tìm kiếm chưa triển khai" disabled><i class="bi bi-search" aria-hidden="true"></i></button>
+                <input type="search" name="q" class="form-control" placeholder="Tìm sách, tác giả, ISBN..." aria-label="Tìm sách" autocomplete="off" maxlength="200" role="combobox" aria-expanded="false" aria-controls="search-suggestions" />
+                <button class="btn btn-primary" type="submit" aria-label="Tìm kiếm"><i class="bi bi-search" aria-hidden="true"></i></button>
             </div>
-        </div>
+            <div id="search-suggestions" class="search-suggestions" role="listbox" hidden></div>
+        </form>
         <div class="customer-header__right d-flex align-items-center">
             <nav class="customer-nav d-flex" aria-label="Điều hướng chính">
                 <a class="nav-link d-none d-md-block @(isHome ? "active" : "")" href="@Url.Action("Index", "Home")">TRANG CHỦ</a>
