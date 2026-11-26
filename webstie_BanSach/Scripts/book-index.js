@@ -5,7 +5,7 @@
     var error = document.getElementById('book-load-error');
     var modalElement = document.getElementById('quickViewModal');
     var modalBody = document.getElementById('quickViewBody');
-    var request, quickRequest, sequence = 0, previousHtml, retryUrl, retryPush;
+    var request, quickRequest, sequence = 0, previousHtml, retryUrl, retryPush, retryScroll;
     var quickScroll = null, quickTrigger = null;
     var mode = 'grid';
     try { mode = localStorage.getItem('book-view-mode') === 'list' ? 'list' : 'grid'; } catch (e) { }
@@ -23,8 +23,8 @@
         });
     }
 
-    function load(url, push) {
-        retryUrl = url; retryPush = push;
+    function load(url, push, scrollResults) {
+        retryUrl = url; retryPush = push; retryScroll = scrollResults;
         var current = ++sequence;
         if (request) request.abort(); else previousHtml = region.innerHTML;
         error.classList.add('d-none');
@@ -43,7 +43,13 @@
             if (current !== sequence) return;
             region.innerHTML = html;
             applyMode();
+            var banner = region.querySelector('.category-banner');
+            if (banner) banner.classList.add('category-banner--enter');
             if (push) history.pushState({}, '', url);
+            if (scrollResults) {
+                var results = region.querySelector('#book-results');
+                if (results) results.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+            }
             previousHtml = null;
         }).fail(function (xhr, status) {
             if (current !== sequence || status === 'abort') return;
@@ -75,9 +81,16 @@
         }
         var link = event.target.closest('.book-categories a, .pager a');
         if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-        event.preventDefault(); load(link.href, true);
+        event.preventDefault(); load(link.href, true, !!link.closest('.pager'));
     });
-    document.getElementById('book-load-retry').addEventListener('click', function () { if (retryUrl) load(retryUrl, retryPush); });
+    region.addEventListener('submit', function (event) {
+        var form = event.target.closest('.pager-jump');
+        if (!form) return;
+        event.preventDefault();
+        var params = new URLSearchParams(new FormData(form));
+        load(form.action + '?' + params.toString(), true, true);
+    });
+    document.getElementById('book-load-retry').addEventListener('click', function () { if (retryUrl) load(retryUrl, retryPush, retryScroll); });
     window.addEventListener('popstate', function () { load(window.location.href, false); });
     modalElement.addEventListener('hidden.bs.modal', function () {
         if (quickRequest) { quickRequest.abort(); quickRequest = null; }

@@ -2,25 +2,49 @@
 @{
     ViewData["EnableQuickView"] = true;
     var bannerName = Model.SelectedCategoryName ?? "Tất cả sách";
-    var theme = Math.Abs(bannerName.Aggregate(0, (hash, ch) => (hash * 31 + ch) % 997)) % 4;
-    var bannerIcon = "bi-book-half";
-    if (bannerName.IndexOf("thiếu nhi", StringComparison.OrdinalIgnoreCase) >= 0) { theme = 2; bannerIcon = "bi-stars"; }
-    else if (bannerName.IndexOf("khoa học", StringComparison.OrdinalIgnoreCase) >= 0 || bannerName.IndexOf("công nghệ", StringComparison.OrdinalIgnoreCase) >= 0) { theme = 1; bannerIcon = "bi-lightbulb"; }
-    else if (bannerName.IndexOf("kinh tế", StringComparison.OrdinalIgnoreCase) >= 0 || bannerName.IndexOf("kinh doanh", StringComparison.OrdinalIgnoreCase) >= 0) { theme = 3; bannerIcon = "bi-graph-up-arrow"; }
-    var cover = Model.BannerBook == null ? null : Model.BannerBook.CoverUrl;
+    var theme = (Model.SelectedCategoryCode ?? "ALL").ToUpperInvariant();
+    var bannerIcon = "bi-collection"; var kicker = "Không gian tri thức"; var intro = "Khám phá những cuốn sách dành cho mọi hành trình.";
+    switch (theme) {
+        case "VH": bannerIcon = "bi-pen"; kicker = "Thế giới câu chữ"; intro = "Đắm mình trong những câu chuyện và cảm xúc bất tận."; break;
+        case "TN": bannerIcon = "bi-stars"; kicker = "Thế giới tuổi thơ"; intro = "Mở ra những trang sách đầy màu sắc và trí tưởng tượng."; break;
+        case "KT": bannerIcon = "bi-graph-up-arrow"; kicker = "Góc nhìn kinh tế"; intro = "Khám phá ý tưởng và kiến thức cho hành trình kinh doanh."; break;
+        case "KN": bannerIcon = "bi-lightbulb"; kicker = "Hoàn thiện bản thân"; intro = "Bồi đắp kỹ năng và tạo động lực cho mỗi ngày."; break;
+        case "IT": bannerIcon = "bi-laptop"; kicker = "Thế giới công nghệ"; intro = "Khám phá kiến thức công nghệ và những ý tưởng mới."; break;
+        case "MG": bannerIcon = "bi-chat-square-text"; kicker = "Thế giới truyện tranh"; intro = "Bước vào những cuộc phiêu lưu sống động qua từng trang truyện."; break;
+        case "TT": bannerIcon = "bi-search"; kicker = "Dấu vết bí ẩn"; intro = "Theo dấu những bí mật qua các câu chuyện ly kỳ."; break;
+        case "LS": bannerIcon = "bi-bank"; kicker = "Dòng chảy lịch sử"; intro = "Tìm hiểu những sự kiện và câu chuyện của thời gian."; break;
+        case "KH": bannerIcon = "bi-droplet"; kicker = "Khám phá khoa học"; intro = "Khơi gợi sự tò mò về thế giới quanh ta."; break;
+        case "NN": bannerIcon = "bi-translate"; kicker = "Kết nối thế giới"; intro = "Mở rộng chân trời qua hành trình học ngôn ngữ."; break;
+        default: theme = "ALL"; break;
+    }
+    var query = new System.Web.Routing.RouteValueDictionary();
+    foreach (var key in Request.QueryString.AllKeys) { if (key != null && key != "page" && key != "_") { query[key] = Request.QueryString[key]; } }
+    if (Model.SelectedCategoryId.HasValue) { query["categoryId"] = Model.SelectedCategoryId.Value; }
+    else { query.Remove("categoryId"); }
+    Func<int, string> pageUrl = p => { query["page"] = p; return Url.Action("Index", "Book", query); };
+    var totalPages = Math.Max(1, Model.TotalPages);
+    var firstItem = Model.TotalCount == 0 ? 0 : (Model.PageNumber - 1) * 20 + 1;
+    var lastItem = Math.Min(Model.PageNumber * 20, Model.TotalCount);
 }
 <div class="book-list-page container py-4">
-    <section class="category-banner category-banner--@theme" aria-label="Giới thiệu danh mục">
+    <section class="category-banner category-banner--@theme.ToLowerInvariant()" aria-label="Giới thiệu danh mục">
         <div class="category-banner__text">
-            <div class="category-banner__label"><i class="bi @bannerIcon" aria-hidden="true"></i> NHÀ SÁCH ONLINE</div>
+            <div class="category-banner__label"><i class="bi @bannerIcon" aria-hidden="true"></i> @kicker</div>
             <h2>@bannerName</h2>
-            <p>Khám phá những cuốn sách trong @(Model.SelectedCategoryId.HasValue ? "danh mục này" : "nhà sách của chúng tôi").</p>
-            <span>@Model.TotalCount đầu sách</span>
+            <p>@intro</p>
+            <div class="category-banner__meta"><span>@Model.TotalCount đầu sách</span><span>Gợi ý hôm nay</span></div>
+            <a class="category-banner__explore" href="#book-results">Khám phá ngay <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
         </div>
-        @if (!string.IsNullOrWhiteSpace(cover)) {
-            <img class="category-banner__cover" src="@Url.Content(cover)" data-fallback="@Url.Content("~/Content/Images/default-book.jpg")" alt="Bìa sách @Model.BannerBook.Title" />
+        @if (Model.BannerBooks != null && Model.BannerBooks.Count > 0) {
+            <div class="category-banner__covers">
+                @for (var i = 0; i < Model.BannerBooks.Count; i++) {
+                    var book = Model.BannerBooks[i];
+                    var cover = "~/" + book.CoverUrl.Trim().Replace('\\', '/').TrimStart('~', '/');
+                    <button type="button" class="category-banner__book category-banner__book--@i" data-quick-book="@book.BookId" aria-label="Xem nhanh @book.Title"><img src="@Url.Content(cover)" data-fallback="@Url.Content("~/Content/Images/default-book.jpg")" alt="Bìa sách @book.Title" /></button>
+                }
+            </div>
         }
-        else { <i class="bi bi-book category-banner__placeholder" aria-hidden="true"></i> }
+        else { <i class="bi @bannerIcon category-banner__placeholder" aria-hidden="true"></i> }
     </section>
     <div class="d-flex flex-wrap justify-content-between align-items-start align-items-md-center gap-3 mb-3">
         <div><h2 class="mb-1">Danh mục sách</h2><p class="text-muted mb-0">Khám phá sách theo thể loại.</p></div>
@@ -33,7 +57,7 @@
             <a class="filter-chip text-decoration-none @(Model.SelectedCategoryId == category.CategoryId ? "active" : "")" href="@Url.Action("Index", "Book", new { categoryId = category.CategoryId })">@category.Name (@category.Count)</a>
         }
     </nav>
-    <div class="d-flex flex-wrap filter-summary mb-3">
+    <div id="book-results" class="d-flex flex-wrap filter-summary mb-3">
         @if (Model.SelectedCategoryId.HasValue) { <span class="chip"><i class="bi bi-bookmark" aria-hidden="true"></i> @Model.SelectedCategoryName</span> }
         <span class="chip bg-light text-muted"><i class="bi bi-search" aria-hidden="true"></i> @Model.TotalCount kết quả</span>
     </div>
@@ -48,16 +72,23 @@
         </div>
     }
     else { <p class="text-muted">Chưa có sách trong danh mục này.</p> }
-    @if (Model.TotalPages > 1)
-    {
-        <nav class="mt-4 pager" aria-label="Phân trang">
-            @if (Model.PageNumber > 1) { <a class="page-link" href="@Url.Action("Index", "Book", new { categoryId = Model.SelectedCategoryId, page = Model.PageNumber - 1 })" aria-label="Trang trước">&lsaquo;</a> }
-            @for (var p = Math.Max(1, Model.PageNumber - 2); p <= Math.Min(Model.TotalPages, Model.PageNumber + 2); p++)
-            {
-                if (p == Model.PageNumber) { <span class="page-link active" aria-current="page">@p</span> }
-                else { <a class="page-link" href="@Url.Action("Index", "Book", new { categoryId = Model.SelectedCategoryId, page = p })">@p</a> }
-            }
-            @if (Model.PageNumber < Model.TotalPages) { <a class="page-link" href="@Url.Action("Index", "Book", new { categoryId = Model.SelectedCategoryId, page = Model.PageNumber + 1 })" aria-label="Trang tiếp">&rsaquo;</a> }
-        </nav>
-    }
+    <div class="pagination-summary mt-4">Đang xem @firstItem–@lastItem trên tổng số @Model.TotalCount đầu sách</div>
+    <nav class="mt-3 pager" aria-label="Phân trang">
+        @if (Model.PageNumber > 1) { <a class="page-link" href="@pageUrl(1)" aria-label="Trang đầu"><i class="bi bi-chevron-double-left" aria-hidden="true"></i></a><a class="page-link" href="@pageUrl(Model.PageNumber - 1)" aria-label="Trang trước"><i class="bi bi-chevron-left" aria-hidden="true"></i></a> }
+        else { <span class="page-link disabled" aria-disabled="true" aria-label="Trang đầu"><i class="bi bi-chevron-double-left" aria-hidden="true"></i></span><span class="page-link disabled" aria-disabled="true" aria-label="Trang trước"><i class="bi bi-chevron-left" aria-hidden="true"></i></span> }
+        @if (Model.PageNumber > 3) { <span class="pager-ellipsis" aria-hidden="true">…</span> }
+        @for (var p = Math.Max(1, Model.PageNumber - 2); p <= Math.Min(totalPages, Model.PageNumber + 2); p++) {
+            if (p == Model.PageNumber) { <span class="page-link active" aria-current="page">@p</span> }
+            else { <a class="page-link" href="@pageUrl(p)">@p</a> }
+        }
+        @if (Model.PageNumber + 2 < totalPages) { <span class="pager-ellipsis" aria-hidden="true">…</span> }
+        @if (Model.PageNumber < totalPages) { <a class="page-link" href="@pageUrl(Model.PageNumber + 1)" aria-label="Trang tiếp"><i class="bi bi-chevron-right" aria-hidden="true"></i></a><a class="page-link" href="@pageUrl(totalPages)" aria-label="Trang cuối"><i class="bi bi-chevron-double-right" aria-hidden="true"></i></a> }
+        else { <span class="page-link disabled" aria-disabled="true" aria-label="Trang tiếp"><i class="bi bi-chevron-right" aria-hidden="true"></i></span><span class="page-link disabled" aria-disabled="true" aria-label="Trang cuối"><i class="bi bi-chevron-double-right" aria-hidden="true"></i></span> }
+    </nav>
+    <div class="pagination-bottom"><span>Trang @Model.PageNumber/@totalPages</span>
+        @if (Model.TotalPages > 1) { <form class="pager-jump" method="get" action="@Url.Action("Index", "Book")">
+            @foreach (var entry in query.Where(x => x.Key != "page")) { <input type="hidden" name="@entry.Key" value="@entry.Value" /> }
+            <label for="jump-page">Đến trang</label><input id="jump-page" name="page" type="number" min="1" max="@totalPages" value="@Model.PageNumber" required /><button class="btn btn-outline-primary btn-sm" type="submit">Đi</button>
+        </form> }
+    </div>
 </div>

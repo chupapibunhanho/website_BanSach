@@ -7,6 +7,7 @@ namespace webstie_BanSach.ViewModels
     {
         public int CategoryId { get; set; }
         public string Name { get; set; }
+        public string Code { get; set; }
         public int Count { get; set; }
     }
 
@@ -20,7 +21,8 @@ namespace webstie_BanSach.ViewModels
         public int TotalPages { get; set; }
         public int TotalCount { get; set; }
         public int AllBooksCount { get; set; }
-        public Book BannerBook { get; set; }
+        public string SelectedCategoryCode { get; set; }
+        public List<Book> BannerBooks { get; set; }
     }
 
     public class QuickViewModel

@@ -183,3 +183,52 @@
     .book-grid.is-list .card-actions { flex: 1 1 100%; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .book-skeleton { animation: none; } .book-card__quick { transition: none; } }
+
+.category-banner { position: relative; isolation: isolate; min-height: 230px; }
+.category-banner::before, .category-banner::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); pointer-events: none; }
+.category-banner::before { width: 320px; height: 320px; top: -190px; left: 35%; box-shadow: 0 0 0 45px rgba(255,255,255,.04), 0 0 0 90px rgba(255,255,255,.035); }
+.category-banner::after { width: 240px; height: 240px; bottom: -180px; right: 8%; background: rgba(255,255,255,.05); }
+.category-banner--all { background: linear-gradient(120deg,#312e81,#4f46e5,#0369a1); }
+.category-banner--vh, .category-banner--mg { background: linear-gradient(120deg,#581c87,#7e22ce,#be185d); }
+.category-banner--tn { background: linear-gradient(120deg,#9a3412,#c2410c,#a16207); }
+.category-banner--kt { background: linear-gradient(120deg,#14532d,#047857,#0f766e); }
+.category-banner--kn { background: linear-gradient(120deg,#9a3412,#b45309,#a16207); }
+.category-banner--it { background: linear-gradient(120deg,#1e3a8a,#1d4ed8,#0e7490); }
+.category-banner--tt { background: linear-gradient(120deg,#0f172a,#312e81,#581c87); }
+.category-banner--ls { background: linear-gradient(120deg,#422006,#78350f,#a16207); }
+.category-banner--kh { background: linear-gradient(120deg,#134e4a,#0f766e,#0369a1); }
+.category-banner--nn { background: linear-gradient(120deg,#1e3a8a,#4338ca,#6d28d9); }
+.category-banner__text { min-width: 0; position: relative; z-index: 2; }
+.category-banner__label { display: flex; align-items: center; gap: 9px; text-transform: uppercase; }
+.category-banner__label .bi { font-size: 1.5rem; }
+.category-banner__meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.category-banner__meta span { display: inline-block; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.12); border-radius: 999px; padding: 4px 10px; font-size: .8rem; }
+.category-banner__explore { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; color: #fff; font-weight: 600; text-decoration: none; }
+.category-banner__explore:hover { color: #fff; text-decoration: underline; }
+.category-banner__covers { position: relative; flex: 0 0 250px; height: 180px; }
+.category-banner__book { position: absolute; border: 0; padding: 0; background: transparent; width: 96px; height: 150px; top: 16px; transition: transform .25s ease; }
+.category-banner__book img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 12px 12px rgba(0,0,0,.28)); }
+.category-banner__book--0 { left: 78px; top: 3px; width: 108px; height: 170px; z-index: 3; }
+.category-banner__book--1 { left: 15px; transform: rotate(-10deg); z-index: 2; }
+.category-banner__book--2 { right: 0; transform: rotate(10deg); z-index: 1; }
+.category-banner__book:hover { z-index: 4; transform: translateY(-5px); }
+.category-banner--enter { animation: category-enter .28s ease both; }
+@keyframes category-enter { from { opacity: .65; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+#book-results { scroll-margin-top: 115px; }
+.pagination-summary, .pagination-bottom { text-align: center; color: #6b7280; font-size: .9rem; }
+.pagination-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; }
+.pager-jump { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.pager-jump input { width: 65px; padding: 4px 6px; border: 1px solid #dfe3ec; border-radius: 8px; }
+.pager-ellipsis { min-width: 24px; text-align: center; }
+.pager .disabled { pointer-events: none; }
+@media (max-width: 575px) {
+    .category-banner { gap: 8px; min-height: 205px; padding: 20px 16px; }
+    .category-banner__covers { flex-basis: 105px; height: 125px; }
+    .category-banner__book { width: 52px; height: 90px; top: 25px; }
+    .category-banner__book--0 { left: 26px; top: 8px; width: 62px; height: 110px; }
+    .category-banner__book--1 { left: 0; } .category-banner__book--2 { right: 0; }
+    .category-banner h2 { font-size: 1.35rem; } .category-banner p { font-size: .85rem; }
+    #book-results { scroll-margin-top: 165px; }
+    .pager { gap: .3rem; } .pager .page-link { min-width: 36px; height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) { .category-banner--enter { animation: none; } .category-banner__book { transition: none; } .category-banner__book:hover { transform: none; } }

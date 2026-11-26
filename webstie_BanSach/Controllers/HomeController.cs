@@ -117,7 +117,7 @@ namespace webstie_BanSach.Controllers
                 .Select(i => books[(start + i) % books.Count]).ToList();
         }
 
-        private static bool HasUsableCover(Book book)
+        internal static bool HasUsableCover(Book book)
         {
             var url = (book.CoverUrl ?? "").Trim().Replace('\\', '/');
             if (url.StartsWith("~/", StringComparison.Ordinal)) url = url.Substring(1);

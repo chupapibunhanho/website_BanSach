@@ -20,6 +20,7 @@ namespace webstie_BanSach.Controllers
                     {
                         CategoryId = c.CategoryId,
                         Name = c.Name,
+                        Code = c.CategoryCode,
                         Count = db.Books.Count(b => b.CategoryId == c.CategoryId && b.Active && !b.IsDeleted)
                     }).ToList();
                 var category = categoryId.HasValue ? categories.FirstOrDefault(c => c.CategoryId == categoryId.Value) : null;
@@ -33,10 +34,15 @@ namespace webstie_BanSach.Controllers
                 page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
                 var books = query.OrderByDescending(b => b.CreatedAtUtc).ThenByDescending(b => b.BookId)
                     .Skip((page - 1) * pageSize).Take(pageSize).ToList();
-                var bannerQuery = query.Where(b => b.CoverUrl != null && b.CoverUrl != "").OrderBy(b => b.BookId);
-                var bannerCount = bannerQuery.Count();
+                var candidates = query.Where(b => b.CoverUrl != null && b.CoverUrl != "")
+                    .OrderBy(b => b.BookId).Select(b => new { b.BookId, b.Title, b.CoverUrl, b.Stock }).ToList()
+                    .Select(b => new Book { BookId = b.BookId, Title = b.Title, CoverUrl = b.CoverUrl, Stock = b.Stock })
+                    .Where(HomeController.HasUsableCover).ToList();
                 var day = (long)(DateTime.UtcNow.AddHours(7).Date - new DateTime(2000, 1, 1)).TotalDays;
-                var banner = bannerCount == 0 ? null : bannerQuery.Skip((int)((day % bannerCount + bannerCount) % bannerCount)).FirstOrDefault();
+                var available = candidates.Where(b => b.Stock > 0).ToList();
+                var others = candidates.Where(b => b.Stock <= 0).ToList();
+                var banner = RotateDaily(available, day, 3);
+                if (banner.Count < 3) banner.AddRange(RotateDaily(others, day, 3 - banner.Count));
                 var ids = books.Select(b => b.BookId).ToList();
                 if (ids.Count > 0)
                 {
@@ -68,10 +74,17 @@ namespace webstie_BanSach.Controllers
                 }
                 var model = new BookListViewModel { Books = books, Categories = categories, SelectedCategoryId = categoryId,
                     SelectedCategoryName = category == null ? null : category.Name, PageNumber = page,
-                    TotalPages = totalPages, TotalCount = count, AllBooksCount = allCount, BannerBook = banner };
+                    TotalPages = totalPages, TotalCount = count, AllBooksCount = allCount, SelectedCategoryCode = category == null ? null : category.Code, BannerBooks = banner };
                 if (Request.IsAjaxRequest()) return PartialView("_BookListContent", model);
                 return View(model);
             }
+        }
+
+        private static System.Collections.Generic.List<Book> RotateDaily(System.Collections.Generic.List<Book> books, long day, int max)
+        {
+            if (books.Count == 0 || max <= 0) return new System.Collections.Generic.List<Book>();
+            var start = (int)(((day * 3) % books.Count + books.Count) % books.Count);
+            return Enumerable.Range(0, Math.Min(max, books.Count)).Select(i => books[(start + i) % books.Count]).ToList();
         }
 
         [HttpGet]
