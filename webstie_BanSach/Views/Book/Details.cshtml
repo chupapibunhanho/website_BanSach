@@ -1,0 +1,39 @@
+@model webstie_BanSach.ViewModels.BookDetailViewModel
+@{
+    var b = Model.Book; ViewBag.Title = b.Title + " - Chi tiết";
+    var fallback = Url.Content("~/Content/Images/default-book.jpg");
+    var image = string.IsNullOrWhiteSpace(b.CoverUrl) ? fallback : Url.Content(b.CoverUrl);
+    var isNew = b.CreatedAtUtc <= DateTime.UtcNow && b.CreatedAtUtc >= DateTime.UtcNow.AddDays(-7);
+}
+@section styles {
+    <link rel="stylesheet" href="@Url.Content("~/Content/home-components.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/book-index.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/book-detail.css")" />
+}
+<div class="book-detail container py-3" data-book-id="@b.BookId" data-recent-url="@Url.Action("Recent", "Book")" data-quick-url="@Url.Action("QuickView", "Book")">
+    <nav class="detail-breadcrumb mb-3" aria-label="Đường dẫn"><a href="@Url.Action("Index", "Home")">Trang chủ</a><span>/</span><a href="@Url.Action("Index", "Book", new { categoryId = b.CategoryId })">@(Model.Category ?? "Danh mục")</a><span>/</span><span aria-current="page">@b.Title</span></nav>
+    <div class="book-detail-hero card border-0 shadow-sm mb-4"><div class="row g-0">
+        <div class="col-lg-5"><div class="detail-media p-3 p-md-4">
+            <button class="detail-cover" type="button" data-bs-toggle="modal" data-bs-target="#coverModal" aria-label="Phóng to bìa sách"><img src="@image" data-fallback="@fallback" alt="Bìa sách @b.Title" /></button>
+            <div class="d-flex gap-2 mt-3"><button class="btn btn-outline-secondary" type="button" data-share><i class="bi bi-share" aria-hidden="true"></i> Chia sẻ</button><span class="small text-muted align-self-center" data-share-status role="status"></span></div>
+        </div></div>
+        <div class="col-lg-7"><div class="detail-body p-3 p-md-4">
+            <div class="detail-badges mb-2">@if (b.SalesRank.HasValue) { <span class="book-badge book-badge--top">TOP @b.SalesRank</span> } @if (isNew) { <span class="book-badge book-badge--new">NEW</span> }</div>
+            <h1 class="detail-title">@b.Title</h1><p class="text-primary fw-semibold">@(string.IsNullOrWhiteSpace(Model.Authors) ? "Chưa có thông tin tác giả" : Model.Authors)</p>
+            <div class="d-flex flex-wrap gap-3 mb-3"><span class="detail-stars"><i class="bi bi-star-fill" aria-hidden="true"></i> @(b.RatingCount > 0 ? String.Format("{0:0.0}/5 ({1} đánh giá)", b.AverageRating, b.RatingCount) : "Chưa có đánh giá")</span><span class="text-muted">Đã bán @String.Format("{0:N0}", b.SoldCount)</span><span class="badge @(b.Stock <= 0 ? "text-bg-secondary" : b.Stock <= 5 ? "text-bg-warning" : "text-bg-success")">@(b.Stock <= 0 ? "Hết hàng" : b.Stock <= 5 ? "Sắp hết hàng" : "Còn hàng")</span></div>
+            <div class="detail-price">@String.Format("{0:N0} ₫", b.Price)</div><p class="text-muted small">@(b.Stock > 0 ? "Còn " + b.Stock + " sản phẩm" : "Tạm hết hàng")</p>
+            <dl class="row detail-spec"><dt class="col-5 col-sm-4">ISBN</dt><dd class="col-7 col-sm-8">@(string.IsNullOrWhiteSpace(b.ISBN13) ? "Chưa có thông tin" : b.ISBN13)</dd><dt class="col-5 col-sm-4">Nhà xuất bản</dt><dd class="col-7 col-sm-8">@(Model.Publisher ?? "Chưa có thông tin")</dd><dt class="col-5 col-sm-4">Danh mục</dt><dd class="col-7 col-sm-8">@(Model.Category ?? "Chưa có thông tin")</dd></dl>
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3"><div class="detail-qty" data-max="@Math.Max(0, b.Stock)"><button type="button" data-qty="-1" aria-label="Giảm số lượng" @(b.Stock <= 0 ? "disabled" : "")>−</button><input type="number" value="1" min="1" max="@Math.Max(1,b.Stock)" aria-label="Số lượng" @(b.Stock <= 0 ? "disabled" : "") /><button type="button" data-qty="1" aria-label="Tăng số lượng" @(b.Stock <= 0 ? "disabled" : "")>+</button></div>
+                <button class="btn btn-primary" type="button" data-book-id="@b.BookId" disabled>@(b.Stock <= 0 ? "Hết hàng" : "Thêm vào giỏ")</button><button class="btn btn-outline-primary" type="button" data-book-id="@b.BookId" disabled>Mua ngay</button><button class="btn btn-outline-secondary" type="button" data-wishlist-id="@b.BookId" disabled><i class="bi bi-heart" aria-hidden="true"></i> Yêu thích</button>
+            </div>
+        </div></div>
+    </div></div>
+    <section class="card border-0 shadow-sm book-panel mb-4"><div class="card-body"><h2 class="h5">Mô tả sản phẩm</h2><div class="detail-description is-collapsed" id="bookDescription">@(string.IsNullOrWhiteSpace(b.Description) ? "Chưa có mô tả." : b.Description)</div><button type="button" class="btn btn-link px-0 d-none" data-description-toggle aria-expanded="false" aria-controls="bookDescription">Xem thêm</button></div></section>
+    <section class="card border-0 shadow-sm book-panel mb-4" id="reviews"><div class="card-body"><h2 class="h5">Đánh giá sách</h2><div class="review-summary"><div><strong>@(b.RatingCount > 0 ? b.AverageRating.ToString("0.0") : "—")</strong> / 5<br /><span class="text-muted">@b.RatingCount đánh giá</span></div><div class="review-bars">@for (var star = 5; star >= 1; star--) { var pct = b.RatingCount == 0 ? 0 : (int)Math.Round(Model.RatingCounts[star] * 100.0 / b.RatingCount); <div class="review-bar"><span>@star <i class="bi bi-star-fill" aria-hidden="true"></i></span><span class="review-bar__track"><span style="width:@(pct)%"></span></span><span>@Model.RatingCounts[star] (@pct%)</span></div> }</div></div><div id="review-content" aria-live="polite">@Html.Partial("_Reviews", Model.ReviewPage)</div></div></section>
+    @if (Model.RelatedBooks.Count > 0) { <section class="detail-recommendations mb-5"><h2 class="h4">Sách liên quan</h2>@Html.Partial("_BookSuggestions", Model.RelatedBooks)</section> }
+    @if (Model.BoughtTogether.Count > 0) { <section class="detail-recommendations mb-5"><h2 class="h4">Thường được mua cùng</h2>@Html.Partial("_BookSuggestions", Model.BoughtTogether)</section> }
+    <section class="detail-recommendations mb-5 d-none" id="recent-section"><div class="d-flex justify-content-between align-items-center"><h2 class="h4">Sách bạn đã xem gần đây</h2><button type="button" class="btn btn-link" data-clear-recent>Xóa lịch sử</button></div><div id="recent-content"></div></section>
+</div>
+<div class="modal fade" id="coverModal" tabindex="-1" aria-labelledby="coverTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="coverTitle">Bìa sách @b.Title</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body text-center"><img class="detail-cover-large" src="@image" data-fallback="@fallback" alt="Bìa sách @b.Title" /></div></div></div></div>
+<div class="modal fade" id="detailQuickModal" tabindex="-1" aria-labelledby="detailQuickTitle" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="detailQuickTitle">Xem nhanh sách</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body" id="detailQuickBody"></div></div></div></div>
+@section scripts { <script src="@Url.Content("~/Scripts/book-detail.js")"></script> }

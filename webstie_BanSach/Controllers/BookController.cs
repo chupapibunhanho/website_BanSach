@@ -127,6 +127,95 @@ namespace webstie_BanSach.Controllers
         }
 
         [HttpGet]
+        public ActionResult Details(long id)
+        {
+            using (var db = new DatabaseDataContext())
+            {
+                var book = db.Books.FirstOrDefault(b => b.BookId == id && b.Active && !b.IsDeleted);
+                if (book == null) return HttpNotFound();
+                var authorIds = db.BookAuthors.Where(a => a.BookId == id).Select(a => a.AuthorId).ToList();
+                var authors = db.Authors.Where(a => authorIds.Contains(a.AuthorId) && !a.IsDeleted).Select(a => a.AuthorName).ToList();
+                var category = db.Categories.Where(c => c.CategoryId == book.CategoryId && !c.IsDeleted).Select(c => c.Name).FirstOrDefault();
+                var publisher = db.Publishers.Where(p => p.PublisherId == book.PublisherId && !p.IsDeleted).Select(p => p.PublisherName).FirstOrDefault();
+                var related = db.Books.Where(b => b.BookId != id && b.Active && !b.IsDeleted &&
+                    ((book.CategoryId.HasValue && b.CategoryId == book.CategoryId) || db.BookAuthors.Any(a => a.BookId == b.BookId && authorIds.Contains(a.AuthorId))))
+                    .OrderByDescending(b => db.BookAuthors.Any(a => a.BookId == b.BookId && authorIds.Contains(a.AuthorId)))
+                    .ThenByDescending(b => b.Stock > 0).ThenByDescending(b => b.CreatedAtUtc).ThenByDescending(b => b.BookId).Take(8).ToList();
+                var togetherIds = (from item in db.OrderItems
+                                   join order in db.Orders on item.OrderId equals order.OrderId
+                                   join candidate in db.Books on item.BookId equals candidate.BookId
+                                   where order.StatusCode == "COMPLETED" && item.BookId != id && candidate.Active && !candidate.IsDeleted &&
+                                     db.OrderItems.Any(original => original.OrderId == item.OrderId && original.BookId == id)
+                                   group item by item.BookId into g
+                                   let orders = g.Select(x => x.OrderId).Distinct().Count()
+                                   where orders >= 2
+                                   orderby orders descending, g.Key descending
+                                   select g.Key).Take(4).ToList();
+                var together = db.Books.Where(b => togetherIds.Contains(b.BookId) && b.Active && !b.IsDeleted).ToList()
+                    .OrderBy(b => togetherIds.IndexOf(b.BookId)).ToList();
+                var ratings = db.BookReviews.Where(r => r.BookId == id && !r.IsDeleted && r.Rating >= 1 && r.Rating <= 5)
+                    .GroupBy(r => r.Rating).Select(g => new { Rating = g.Key, Count = g.Count() }).ToList();
+                var counts = new int[6]; foreach (var rating in ratings) counts[rating.Rating] = rating.Count;
+                PopulateBookStats(db, new[] { book }.Concat(related).Concat(together).ToList());
+                return View(new BookDetailViewModel { Book = book, Authors = string.Join(", ", authors), Category = category, Publisher = publisher,
+                    RatingCounts = counts, RelatedBooks = related, BoughtTogether = together, ReviewPage = GetReviews(db, id, null, "newest", 1, counts.Sum()) });
+            }
+        }
+
+        [HttpGet]
+        public ActionResult Reviews(long id, int? rating = null, string sort = "newest", int page = 1)
+        {
+            if (!ModelState.IsValid || (rating.HasValue && (rating < 1 || rating > 5)) || (sort != "newest" && sort != "highest" && sort != "lowest")) return new HttpStatusCodeResult(400);
+            using (var db = new DatabaseDataContext())
+            {
+                if (!db.Books.Any(b => b.BookId == id && b.Active && !b.IsDeleted)) return HttpNotFound();
+                return PartialView("_Reviews", GetReviews(db, id, rating, sort, page));
+            }
+        }
+
+        private static ReviewPageViewModel GetReviews(DatabaseDataContext db, long id, int? rating, string sort, int page, int? knownCount = null)
+        {
+            const int size = 5;
+            var query = db.BookReviews.Where(r => r.BookId == id && !r.IsDeleted && r.Rating >= 1 && r.Rating <= 5);
+            if (rating.HasValue) query = query.Where(r => r.Rating == rating.Value);
+            var count = knownCount ?? query.Count(); var pages = (int)Math.Ceiling(count / (double)size);
+            page = Math.Max(1, Math.Min(page, Math.Max(1, pages)));
+            var ordered = sort == "highest" ? query.OrderByDescending(r => r.Rating).ThenByDescending(r => r.CreatedAtUtc).ThenByDescending(r => r.ReviewId)
+                : sort == "lowest" ? query.OrderBy(r => r.Rating).ThenByDescending(r => r.CreatedAtUtc).ThenByDescending(r => r.ReviewId)
+                : query.OrderByDescending(r => r.CreatedAtUtc).ThenByDescending(r => r.ReviewId);
+            var reviews = ordered.Skip((page - 1) * size).Take(size).Select(r => new ReviewItemViewModel {
+                ReviewerName = r.User.FullName, Rating = r.Rating, Title = r.Title, Comment = r.Comment, CreatedAtUtc = r.CreatedAtUtc }).ToList();
+            return new ReviewPageViewModel { BookId = id, Reviews = reviews, Rating = rating, Sort = sort, Page = page, TotalPages = pages, TotalCount = count };
+        }
+
+        [HttpGet]
+        public ActionResult Recent(string ids)
+        {
+            var ordered = (ids ?? "").Split(',').Take(10).Select(s => long.TryParse(s, out var value) ? value : 0)
+                .Where(x => x > 0).Distinct().ToList();
+            using (var db = new DatabaseDataContext())
+            {
+                var books = db.Books.Where(b => ordered.Contains(b.BookId) && b.Active && !b.IsDeleted).ToList()
+                    .OrderBy(b => ordered.IndexOf(b.BookId)).ToList();
+                PopulateBookStats(db, books);
+                Response.Cache.SetNoStore();
+                return PartialView("_BookSuggestions", books);
+            }
+        }
+
+        private static void PopulateBookStats(DatabaseDataContext db, List<Book> books)
+        {
+            var ids = books.Select(b => b.BookId).Distinct().ToList(); if (ids.Count == 0) return;
+            var ratings = db.BookReviews.Where(r => !r.IsDeleted && r.Rating >= 1 && r.Rating <= 5 && ids.Contains(r.BookId))
+                .GroupBy(r => r.BookId).Select(g => new { Id = g.Key, Average = g.Average(r => (double)r.Rating), Count = g.Count() }).ToDictionary(x => x.Id);
+            var sales = (from i in db.OrderItems join o in db.Orders on i.OrderId equals o.OrderId where o.StatusCode == "COMPLETED" && ids.Contains(i.BookId)
+                         group i by i.BookId into g select new { Id = g.Key, Total = g.Sum(x => (long)x.Quantity) }).ToDictionary(x => x.Id);
+            var top = CustomerCache.TopBookIds(db);
+            foreach (var b in books) { if (ratings.TryGetValue(b.BookId, out var rating)) { b.AverageRating = rating.Average; b.RatingCount = rating.Count; }
+                b.SoldCount = sales.TryGetValue(b.BookId, out var sold) ? sold.Total : 0; var rank = top.IndexOf(b.BookId); if (rank >= 0 && rank < 3) b.SalesRank = rank + 1; }
+        }
+
+        [HttpGet]
         public ActionResult QuickView(long id)
         {
             using (var db = new DatabaseDataContext())

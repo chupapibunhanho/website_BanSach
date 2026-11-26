@@ -43,4 +43,36 @@ namespace webstie_BanSach.ViewModels
         public string Publisher { get; set; }
         public string Category { get; set; }
     }
+
+    public class ReviewItemViewModel
+    {
+        public string ReviewerName { get; set; }
+        public byte Rating { get; set; }
+        public string Title { get; set; }
+        public string Comment { get; set; }
+        public System.DateTime CreatedAtUtc { get; set; }
+    }
+
+    public class ReviewPageViewModel
+    {
+        public long BookId { get; set; }
+        public List<ReviewItemViewModel> Reviews { get; set; }
+        public int? Rating { get; set; }
+        public string Sort { get; set; }
+        public int Page { get; set; }
+        public int TotalPages { get; set; }
+        public int TotalCount { get; set; }
+    }
+
+    public class BookDetailViewModel
+    {
+        public Book Book { get; set; }
+        public string Authors { get; set; }
+        public string Category { get; set; }
+        public string Publisher { get; set; }
+        public int[] RatingCounts { get; set; }
+        public ReviewPageViewModel ReviewPage { get; set; }
+        public List<Book> RelatedBooks { get; set; }
+        public List<Book> BoughtTogether { get; set; }
+    }
 }

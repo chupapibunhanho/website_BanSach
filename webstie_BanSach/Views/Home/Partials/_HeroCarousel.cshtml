@@ -21,7 +21,7 @@
                         <div class="col-lg-6">
                             <h2 class="display-4 fw-bold mb-3">@book.Title</h2>
                             <p class="lead text-muted mb-4 hero-description">@(string.IsNullOrWhiteSpace(book.Description) ? "Chưa có mô tả cho cuốn sách này." : book.Description)</p>
-                            <button type="button" class="btn btn-outline-primary btn-cta" data-book-id="@book.BookId" title="Chi tiết sách chưa triển khai" disabled>Mua ngay</button>
+                            <a class="btn btn-outline-primary btn-cta" href="@Url.Action("Details", "Book", new { id = book.BookId })">Xem chi tiết</a>
                         </div>
                         <div class="col-lg-6 text-center">
                             <img src="@Url.Content(cover)" class="img-fluid rounded shadow-sm hero-img" alt="Bìa sách @book.Title" />

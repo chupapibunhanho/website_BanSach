@@ -14,7 +14,7 @@
         <div class="d-flex flex-wrap gap-2">
             <button type="button" class="btn btn-primary" data-book-id="@book.BookId" disabled>@(book.Stock <= 0 ? "Hết hàng" : "Thêm vào giỏ")</button>
             <button type="button" class="btn btn-outline-secondary" data-wishlist-id="@book.BookId" disabled>Yêu thích</button>
-            <button type="button" class="btn btn-outline-primary" data-book-id="@book.BookId" disabled>Xem chi tiết</button>
+            <a class="btn btn-outline-primary" href="@Url.Action("Details", "Book", new { id = book.BookId })">Xem chi tiết</a>
         </div>
     </div>
 </div>
