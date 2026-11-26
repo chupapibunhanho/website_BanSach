@@ -150,6 +150,7 @@
     <Compile Include="Controllers\CategoryMgmtController.cs" />
     <Compile Include="Controllers\PublisherMgmtController.cs" />
     <Compile Include="Models\Database.cs" />
+    <Compile Include="Models\Book.partial.cs" />
     <Compile Include="Models\FunctResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -393,6 +394,13 @@
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Content\customer.css" />
+    <Content Include="Content\home.css" />
+    <Content Include="Content\home-components.css" />
+    <Content Include="Content\Images\Carousel_1.jpg" />
+    <Content Include="Content\Images\Carousel_2.jpg" />
+    <Content Include="Content\Images\Carousel_3.jpg" />
+    <Content Include="Content\Images\default-book.jpg" />
+    <Content Include="Scripts\home.js" />
     <Content Include="Scripts\adminlte.js" />
     <Content Include="Scripts\adminlte.min.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
@@ -438,10 +446,18 @@
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Shared\_CustomerHeader.cshtml" />
+    <Content Include="Views\Shared\_BookCard.cshtml" />
     <Content Include="Views\Shared\_CustomerFooter.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Home\Partials\_HeroCarousel.cshtml" />
+    <Content Include="Views\Home\Partials\_BestSellers.cshtml" />
+    <Content Include="Views\Home\Partials\_BestSellersList.cshtml" />
+    <Content Include="Views\Home\Partials\_Categories.cshtml" />
+    <Content Include="Views\Home\Partials\_CategoriesList.cshtml" />
+    <Content Include="Views\Home\Partials\_Newest.cshtml" />
+    <Content Include="Views\Home\Partials\_NewestList.cshtml" />
     <Content Include="Views\Dashboard\Dashboard.cshtml" />
     <Content Include="Views\Shared\_AdminLayout.cshtml" />
     <Content Include="Views\AuthorMgmt\AddAuthor.cshtml" />

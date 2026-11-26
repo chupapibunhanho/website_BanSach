@@ -1,0 +1,9 @@
+@using System.Linq
+@model IEnumerable<webstie_BanSach.Models.Book>
+
+@foreach (var book in Model ?? Enumerable.Empty<webstie_BanSach.Models.Book>())
+{
+    <div class="col">
+        @Html.Partial("_BookCard", book)
+    </div>
+}

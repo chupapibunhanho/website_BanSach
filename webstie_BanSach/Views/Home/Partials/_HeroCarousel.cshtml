@@ -1,0 +1,43 @@
+@model System.Collections.Generic.IReadOnlyList<webstie_BanSach.Models.Book>
+@if (Model != null && Model.Count > 0)
+{
+    <div id="heroCarousel" class="carousel slide hero-carousel mb-5" data-bs-ride="carousel">
+        @if (Model.Count > 1)
+        {
+            <div class="carousel-indicators">
+                @for (var i = 0; i < Model.Count; i++)
+                {
+                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
+                }
+            </div>
+        }
+        <div class="carousel-inner">
+            @for (var i = 0; i < Model.Count; i++)
+            {
+                var book = Model[i];
+                var cover = "~/" + book.CoverUrl.Trim().Replace('\\', '/').TrimStart('~', '/');
+                <div class="carousel-item @(i == 0 ? "active" : "") py-5">
+                    <div class="container"><div class="row align-items-center gy-4">
+                        <div class="col-lg-6">
+                            <h2 class="display-4 fw-bold mb-3">@book.Title</h2>
+                            <p class="lead text-muted mb-4 hero-description">@(string.IsNullOrWhiteSpace(book.Description) ? "Chưa có mô tả cho cuốn sách này." : book.Description)</p>
+                            <button type="button" class="btn btn-outline-primary btn-cta" data-book-id="@book.BookId" title="Chi tiết sách chưa triển khai" disabled>Mua ngay</button>
+                        </div>
+                        <div class="col-lg-6 text-center">
+                            <img src="@Url.Content(cover)" class="img-fluid rounded shadow-sm hero-img" alt="Bìa sách @book.Title" />
+                        </div>
+                    </div></div>
+                </div>
+            }
+        </div>
+        @if (Model.Count > 1)
+        {
+            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Trước</span></button>
+            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Tiếp</span></button>
+        }
+    </div>
+}
+else
+{
+    <div class="hero-carousel mb-5 p-5 text-center text-muted" role="status">Hiện chưa có sách phù hợp để giới thiệu.</div>
+}

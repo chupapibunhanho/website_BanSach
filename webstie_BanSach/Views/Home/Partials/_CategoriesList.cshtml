@@ -1,0 +1,19 @@
+@using System.Linq
+@model IEnumerable<webstie_BanSach.Models.Category>
+
+@foreach (var cat in Model ?? Enumerable.Empty<webstie_BanSach.Models.Category>())
+{
+    var initial = string.IsNullOrWhiteSpace(cat.Name) ? "?" : char.ToUpper(cat.Name[0]).ToString();
+    <div class="categories-scroll__item">
+        <div class="category-card category-card--soft" title="Danh mục sách chưa triển khai">
+            <span class="category-card__icon" aria-hidden="true">@initial</span>
+            <div class="category-card__content">
+                <span class="category-card__title">@cat.Name</span>
+                <span class="category-card__desc">Xem sách theo chủ đề này</span>
+            </div>
+            <span class="category-card__arrow" aria-hidden="true">
+                <i class="bi bi-arrow-right"></i>
+            </span>
+        </div>
+    </div>
+}

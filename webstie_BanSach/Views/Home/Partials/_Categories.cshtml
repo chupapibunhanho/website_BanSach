@@ -1,0 +1,52 @@
+<section class="categories-section container mt-5 mb-5 section-alt categories-shell"
+         data-endpoint="@Url.Action("CategoriesPartial", "Home")">
+    <div class="categories-heading d-flex flex-wrap justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+        <div>
+            <h3 class="section-title m-0">Khám phá theo danh mục</h3>
+        </div>
+        <button type="button" class="btn btn-link section-cta" title="Danh sách sách chưa triển khai" disabled>Xem tất cả</button>
+    </div>
+
+    <div id="categories-loading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+        <p class="mt-2 text-muted mb-0">Đang tải danh mục...</p>
+    </div>
+
+    <div id="categories-error" class="alert alert-warning d-none" role="alert">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+            <span data-categories-error>Không thể tải danh mục.</span>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary ms-auto"
+                    data-categories-retry>
+                Thử lại
+            </button>
+        </div>
+    </div>
+
+    <div id="categories-empty" class="text-muted d-none">
+        Chưa có danh mục nào.
+    </div>
+
+    <div class="categories-slider d-none" data-categories-shell>
+        <button type="button"
+                class="slider-nav slider-nav--prev"
+                data-categories-prev
+                aria-label="Danh mục trước">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </button>
+
+        <div class="categories-scroll"
+             role="region"
+             aria-label="Danh mục"
+             data-categories-container>
+        </div>
+
+        <button type="button"
+                class="slider-nav slider-nav--next"
+                data-categories-next
+                aria-label="Danh mục tiếp theo">
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </button>
+    </div>
+</section>
