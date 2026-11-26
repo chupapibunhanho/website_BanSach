@@ -11,7 +11,7 @@
 }
 <div class="book-card card h-100 position-relative" data-book-id="@Model.BookId">
     <div class="book-card__cover">
-        <img src="@image" data-fallback="@fallback" class="card-img-top book-card__img" alt="@Model.Title" />
+        <img src="@image" data-fallback="@fallback" class="card-img-top book-card__img" alt="@Model.Title" loading="lazy" decoding="async" width="240" height="240" />
         <div class="book-card__badges">
             @if (Model.SalesRank.HasValue && Model.SalesRank.Value <= 3) { <span class="book-badge book-badge--top">TOP @Model.SalesRank</span> }
             @if (isNew) { <span class="book-badge book-badge--new">NEW</span> }

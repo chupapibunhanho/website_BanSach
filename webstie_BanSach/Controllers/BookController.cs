@@ -15,34 +15,25 @@ namespace webstie_BanSach.Controllers
             const int pageSize = 20;
             using (var db = new DatabaseDataContext())
             {
-                var categories = db.Categories.Where(c => !c.IsDeleted).OrderBy(c => c.Name)
-                    .Select(c => new CategoryCountViewModel
-                    {
-                        CategoryId = c.CategoryId,
-                        Name = c.Name,
-                        Code = c.CategoryCode,
-                        Count = db.Books.Count(b => b.CategoryId == c.CategoryId && b.Active && !b.IsDeleted)
-                    }).ToList();
+                var categoryInfo = CustomerCache.Categories(db);
+                if (categoryId.HasValue && !categoryInfo.Any(c => c.CategoryId == categoryId.Value))
+                    categoryInfo = CustomerCache.Categories(db, true);
+                var counts = db.Books.Where(b => b.Active && !b.IsDeleted).GroupBy(b => b.CategoryId)
+                    .Select(g => new { Id = g.Key, Count = g.Count() }).ToList();
+                var categories = categoryInfo.Select(c => new CategoryCountViewModel { CategoryId = c.CategoryId, Name = c.Name,
+                    Code = c.CategoryCode, Count = counts.Where(x => x.Id == c.CategoryId).Select(x => x.Count).FirstOrDefault() }).ToList();
                 var category = categoryId.HasValue ? categories.FirstOrDefault(c => c.CategoryId == categoryId.Value) : null;
                 if (categoryId.HasValue && category == null) return HttpNotFound();
 
                 var allBooks = db.Books.Where(b => b.Active && !b.IsDeleted);
-                var allCount = allBooks.Count();
+                var allCount = counts.Sum(c => c.Count);
                 var query = categoryId.HasValue ? allBooks.Where(b => b.CategoryId == categoryId.Value) : allBooks;
                 var count = categoryId.HasValue ? category.Count : allCount;
                 var totalPages = (int)Math.Ceiling(count / (double)pageSize);
                 page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
                 var books = query.OrderByDescending(b => b.CreatedAtUtc).ThenByDescending(b => b.BookId)
                     .Skip((page - 1) * pageSize).Take(pageSize).ToList();
-                var candidates = query.Where(b => b.CoverUrl != null && b.CoverUrl != "")
-                    .OrderBy(b => b.BookId).Select(b => new { b.BookId, b.Title, b.CoverUrl, b.Stock }).ToList()
-                    .Select(b => new Book { BookId = b.BookId, Title = b.Title, CoverUrl = b.CoverUrl, Stock = b.Stock })
-                    .Where(HomeController.HasUsableCover).ToList();
-                var day = (long)(DateTime.UtcNow.AddHours(7).Date - new DateTime(2000, 1, 1)).TotalDays;
-                var available = candidates.Where(b => b.Stock > 0).ToList();
-                var others = candidates.Where(b => b.Stock <= 0).ToList();
-                var banner = RotateDaily(available, day, 3);
-                if (banner.Count < 3) banner.AddRange(RotateDaily(others, day, 3 - banner.Count));
+                var banner = CustomerCache.Banner(db, categoryId, false);
                 var ids = books.Select(b => b.BookId).ToList();
                 if (ids.Count > 0)
                 {
@@ -57,12 +48,7 @@ namespace webstie_BanSach.Controllers
                                  where order.StatusCode == "COMPLETED" && ids.Contains(item.BookId)
                                  group item by item.BookId into g
                                  select new { Id = g.Key, Total = g.Sum(i => (long)i.Quantity) }).ToDictionary(s => s.Id);
-                    var top = (from item in db.OrderItems join order in db.Orders on item.OrderId equals order.OrderId
-                               join book in db.Books on item.BookId equals book.BookId
-                               where order.StatusCode == "COMPLETED" && book.Active && !book.IsDeleted
-                               group item by item.BookId into g
-                               let total = g.Sum(i => (long)i.Quantity)
-                               orderby total descending, g.Key descending select g.Key).Take(3).ToList();
+                    var top = CustomerCache.TopBookIds(db).Take(3).ToList();
                     foreach (var book in books)
                     {
                         if (ratings.TryGetValue(book.BookId, out var rating)) { book.AverageRating = rating.Average; book.RatingCount = rating.Count; }
@@ -78,13 +64,6 @@ namespace webstie_BanSach.Controllers
                 if (Request.IsAjaxRequest()) return PartialView("_BookListContent", model);
                 return View(model);
             }
-        }
-
-        private static System.Collections.Generic.List<Book> RotateDaily(System.Collections.Generic.List<Book> books, long day, int max)
-        {
-            if (books.Count == 0 || max <= 0) return new System.Collections.Generic.List<Book>();
-            var start = (int)(((day * 3) % books.Count + books.Count) % books.Count);
-            return Enumerable.Range(0, Math.Min(max, books.Count)).Select(i => books[(start + i) % books.Count]).ToList();
         }
 
         [HttpGet]

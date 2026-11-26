@@ -40,7 +40,7 @@
                 @for (var i = 0; i < Model.BannerBooks.Count; i++) {
                     var book = Model.BannerBooks[i];
                     var cover = "~/" + book.CoverUrl.Trim().Replace('\\', '/').TrimStart('~', '/');
-                    <button type="button" class="category-banner__book category-banner__book--@i" data-quick-book="@book.BookId" aria-label="Xem nhanh @book.Title"><img src="@Url.Content(cover)" data-fallback="@Url.Content("~/Content/Images/default-book.jpg")" alt="Bìa sách @book.Title" /></button>
+                    <button type="button" class="category-banner__book category-banner__book--@i" data-quick-book="@book.BookId" aria-label="Xem nhanh @book.Title"><img src="@Url.Content(cover)" data-fallback="@Url.Content("~/Content/Images/default-book.jpg")" alt="Bìa sách @book.Title" width="108" height="170" decoding="async" /></button>
                 }
             </div>
         }
