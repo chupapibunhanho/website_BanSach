@@ -25,6 +25,7 @@
 .customer-header a:focus-visible, .customer-header button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 3px; }
 @media (min-width: 1200px) { .customer-site { --customer-gutter: 40px; } }
 @media (max-width: 768px) { .customer-header__inner { gap: 12px; } .customer-brand { font-size: 20px; } }
+@media (max-width: 767px) { .customer-nav .nav-link { margin-left: 0; font-size: 11px; letter-spacing: 0; white-space: nowrap; } }
 @media (max-width: 575px) {
     .customer-header__inner { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }
     .customer-header__right { grid-column: 2; grid-row: 1; }

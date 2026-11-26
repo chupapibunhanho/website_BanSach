@@ -131,6 +131,8 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\BookController.cs" />
+    <Compile Include="ViewModels\BookListViewModel.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -396,6 +398,7 @@
     <Content Include="Content\customer.css" />
     <Content Include="Content\home.css" />
     <Content Include="Content\home-components.css" />
+    <Content Include="Content\book-index.css" />
     <Content Include="Content\Images\Carousel_1.jpg" />
     <Content Include="Content\Images\Carousel_2.jpg" />
     <Content Include="Content\Images\Carousel_3.jpg" />
@@ -451,6 +454,7 @@
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Book\Index.cshtml" />
     <Content Include="Views\Home\Partials\_HeroCarousel.cshtml" />
     <Content Include="Views\Home\Partials\_BestSellers.cshtml" />
     <Content Include="Views\Home\Partials\_BestSellersList.cshtml" />
