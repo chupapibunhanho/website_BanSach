@@ -1,0 +1,15 @@
+@{
+    var imagePath = "~/Content/Images/auth/library-reading.jpg";
+    var imageFile = Server.MapPath(imagePath);
+    var hasImage = System.IO.File.Exists(imageFile);
+}
+<section class="login-welcome" aria-label="Nhà Sách Online">
+    @if (hasImage) {
+        <img class="login-welcome__image" src="@Url.Content(imagePath)" alt="" aria-hidden="true" />
+    }
+    <a class="login-brand" href="@Url.Action("Index", "Home")">Nhà Sách Online</a>
+    <div class="login-welcome__content">
+        <h1>Mỗi trang sách, một hành trình mới.</h1>
+        <p>Khám phá những câu chuyện và kiến thức dành riêng cho bạn.</p>
+    </div>
+</section>

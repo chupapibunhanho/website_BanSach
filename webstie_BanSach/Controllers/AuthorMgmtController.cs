@@ -4,6 +4,7 @@ using webstie_BanSach.Business;
 
 namespace webstie_BanSach.Controllers
 {
+    [webstie_BanSach.Security.AdminAccess]
     public class AuthorMgmtController : Controller
     {
         private readonly AuthorMgmt_ctrl _biz = new AuthorMgmt_ctrl();

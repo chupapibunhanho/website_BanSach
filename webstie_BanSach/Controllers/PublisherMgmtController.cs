@@ -4,6 +4,7 @@ using webstie_BanSach.Business;
 
 namespace webstie_BanSach.Controllers
 {
+    [webstie_BanSach.Security.AdminAccess]
     public class PublisherMgmtController : Controller
     {
         private readonly PublisherMgmt_ctrl _biz = new PublisherMgmt_ctrl();

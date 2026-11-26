@@ -1,0 +1,27 @@
+@model webstie_BanSach.ViewModels.LoginViewModel
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Đăng nhập - Nhà Sách Online</title>
+    <link rel="stylesheet" href="@Url.Content("~/Content/login.css")" />
+</head><body>
+    <main class="login-shell">
+        @Html.Partial("_AuthWelcome")
+        <section class="login-panel"><div class="login-form-wrap">
+            <a class="login-back" href="@Url.Action("Index", "Home")">← Quay về trang chủ</a>
+            <h2>Chào mừng trở lại</h2><p class="login-subtitle">Đăng nhập để tiếp tục hành trình đọc sách.</p>
+            <form method="post" action="@Url.Action("Login", "Account")" id="login-form" novalidate>
+                @Html.AntiForgeryToken()<input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null) { <div class="login-alert" role="alert">@Html.ValidationSummary(true)</div> }
+                <label for="login-email">Email</label><input id="login-email" name="Email" type="email" value="@Model.Email" maxlength="255" autocomplete="username" required aria-describedby="email-error" />
+                <span id="email-error" class="login-error">@Html.ValidationMessage("Email")</span>
+                <div class="login-label-row"><label for="login-password">Mật khẩu</label><span class="login-disabled" aria-disabled="true" title="Chức năng chưa khả dụng">Quên mật khẩu?</span></div>
+                <div class="login-password"><input id="login-password" name="Password" type="password" maxlength="255" autocomplete="current-password" required aria-describedby="password-error caps-warning" /><button type="button" id="password-toggle" aria-label="Hiện mật khẩu" aria-pressed="false">Hiện</button></div>
+                <span id="password-error" class="login-error">@Html.ValidationMessage("Password")</span><span id="caps-warning" class="login-hint" hidden>Caps Lock đang bật.</span>
+                <label class="login-remember"><input type="checkbox" name="RememberMe" value="true" @(Model.RememberMe ? "checked" : "") /> Ghi nhớ đăng nhập</label>
+                <button type="submit" class="login-submit" id="login-submit"><span class="login-spinner" hidden></span><span>Đăng nhập</span></button>
+            </form>
+            <p class="login-register">Bạn chưa có tài khoản? <span class="login-disabled" aria-disabled="true" title="Chức năng chưa khả dụng">Đăng ký</span></p>
+        </div></section>
+    </main>
+    <script src="@Url.Content("~/Scripts/login.js")"></script>
+</body></html>

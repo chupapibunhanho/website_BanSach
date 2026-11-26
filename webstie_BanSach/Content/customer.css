@@ -37,6 +37,20 @@
 .customer-icon .bi { font-size: 20px; color: #1e1b4b; }
 .customer-user-toggle { padding: 8px 12px; border-radius: 999px; border: 1px solid #d1d5db; background: #f8fafc; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .customer-user-toggle .bi { font-size: 20px; }
+.customer-auth-links { display: flex; align-items: center; gap: 10px; white-space: nowrap; font-size: .8rem; }
+.customer-auth-links a { color: #1e1b4b; font-weight: 600; text-decoration: none; }
+.customer-auth-links span { color: #6b7280; }
+.customer-account { position: relative; }
+.customer-account summary { list-style: none; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.customer-account summary::-webkit-details-marker { display: none; }
+.customer-account__name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
+.customer-account__menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 1100; width: 220px; padding: 8px 0; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; box-shadow: 0 10px 25px rgba(15,23,42,.15); }
+.customer-account__menu a, .customer-account__menu button, .customer-account__label, .customer-account__disabled { display: block; width: 100%; padding: 8px 14px; text-align: left; font-size: .88rem; }
+.customer-account__menu a, .customer-account__menu button { border: 0; background: transparent; color: #1e1b4b; text-decoration: none; }
+.customer-account__menu a:hover, .customer-account__menu button:hover { background: #eef2ff; }
+.customer-account__label { font-weight: 700; overflow-wrap: anywhere; }
+.customer-account__disabled { color: #94a3b8; }
+@media (max-width: 767px) { .customer-account__name { display: none; } .customer-auth-links { gap: 6px; font-size: .7rem; } }
 .customer-header a:focus-visible, .customer-header button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 3px; }
 @media (min-width: 1200px) { .customer-site { --customer-gutter: 40px; } }
 @media (max-width: 768px) { .customer-header__inner { gap: 12px; } .customer-brand { font-size: 20px; } }

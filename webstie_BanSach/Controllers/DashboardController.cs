@@ -3,6 +3,7 @@ using webstie_BanSach.Business;
 
 namespace webstie_BanSach.Controllers
 {
+    [webstie_BanSach.Security.AdminAccess]
     public class DashboardController : Controller
     {
         private readonly Dashboard_ctrl _biz = new Dashboard_ctrl();

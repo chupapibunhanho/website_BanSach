@@ -8,6 +8,8 @@ namespace webstie_BanSach
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
             filters.Add(new HandleErrorAttribute());
+            filters.Add(new webstie_BanSach.Security.CustomerAuthenticationFilter());
+            filters.Add(new webstie_BanSach.Security.AntiForgeryErrorFilter());
         }
     }
 }

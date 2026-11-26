@@ -6,6 +6,7 @@ using webstie_BanSach.Business;
 
 namespace webstie_BanSach.Controllers
 {
+    [webstie_BanSach.Security.AdminAccess]
     public class BookMgmtController : Controller
     {
         private readonly BookMgmt_ctrl _bookBusiness = new BookMgmt_ctrl();

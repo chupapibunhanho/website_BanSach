@@ -131,6 +131,9 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Security\CustomerAuthentication.cs" />
+    <Compile Include="ViewModels\LoginViewModel.cs" />
     <Compile Include="Controllers\BookController.cs" />
     <Compile Include="ViewModels\BookListViewModel.cs" />
     <Compile Include="Global.asax.cs">
@@ -396,6 +399,8 @@
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Content\customer.css" />
+    <Content Include="Content\login.css" />
+    <Content Include="Content\Images\auth\library-reading.jpg" Condition="Exists('Content\Images\auth\library-reading.jpg')" />
     <Content Include="Content\home.css" />
     <Content Include="Content\home-components.css" />
     <Content Include="Content\book-index.css" />
@@ -405,6 +410,7 @@
     <Content Include="Content\Images\Carousel_3.jpg" />
     <Content Include="Content\Images\default-book.jpg" />
     <Content Include="Scripts\home.js" />
+    <Content Include="Scripts\login.js" />
     <Content Include="Scripts\book-index.js" />
     <Content Include="Scripts\book-detail.js" />
     <Content Include="Scripts\customer-search.js" />
@@ -458,6 +464,8 @@
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Account\Login.cshtml" />
+    <Content Include="Views\Shared\_AuthWelcome.cshtml" />
     <Content Include="Views\Book\Index.cshtml" />
     <Content Include="Views\Book\Details.cshtml" />
     <Content Include="Views\Book\_Reviews.cshtml" />

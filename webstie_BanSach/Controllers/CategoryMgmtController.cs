@@ -4,6 +4,7 @@ using webstie_BanSach.Business;
 
 namespace webstie_BanSach.Controllers
 {
+    [webstie_BanSach.Security.AdminAccess]
     public class CategoryMgmtController : Controller
     {
         private readonly CategoryMgmt_ctrl _categoryBusiness = new CategoryMgmt_ctrl();

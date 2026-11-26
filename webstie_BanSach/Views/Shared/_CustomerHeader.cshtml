@@ -2,6 +2,8 @@
     var action = (ViewContext.RouteData.Values["action"] ?? "").ToString();
     var controller = (ViewContext.RouteData.Values["controller"] ?? "").ToString();
     var isHome = controller.Equals("Home", StringComparison.OrdinalIgnoreCase) && action.Equals("Index", StringComparison.OrdinalIgnoreCase);
+    var signedIn = User != null && User.Identity != null && User.Identity.IsAuthenticated;
+    var account = User as webstie_BanSach.Security.CustomerPrincipal;
 }
 <header class="customer-header">
     <div class="container customer-header__inner py-2">
@@ -21,7 +23,16 @@
             </nav>
             <button class="customer-icon btn btn-link ms-3" type="button" aria-label="Giỏ hàng" title="Giỏ hàng chưa triển khai" disabled><i class="bi bi-cart" aria-hidden="true"></i></button>
             <button class="customer-icon btn btn-link ms-3" type="button" aria-label="Yêu thích" title="Yêu thích chưa triển khai" disabled><i class="bi bi-heart" aria-hidden="true"></i></button>
-            <button class="btn customer-user-toggle ms-3" type="button" aria-label="Tài khoản" title="Tài khoản chưa triển khai" disabled><i class="bi bi-person-circle" aria-hidden="true"></i></button>
+            @if (signedIn && account != null) {
+                <details class="customer-account ms-3"><summary class="btn customer-user-toggle" aria-label="Tài khoản @account.DisplayName"><i class="bi bi-person-circle" aria-hidden="true"></i><span class="customer-account__name">@account.DisplayName</span></summary>
+                    <div class="customer-account__menu"><span class="customer-account__label">@account.DisplayName</span><span class="customer-account__disabled">Hồ sơ cá nhân</span><span class="customer-account__disabled">Đơn hàng của tôi</span><span class="customer-account__disabled">Danh sách yêu thích</span><span class="customer-account__disabled">Đổi mật khẩu</span>
+                        @if (User.IsInRole("ADMIN")) { <a href="@Url.Action("Dashboard", "Dashboard")">Quản trị hệ thống</a> }
+                        <form action="@Url.Action("Logout", "Account")" method="post">@Html.AntiForgeryToken()<button type="submit">Đăng xuất</button></form>
+                    </div>
+                </details>
+            } else {
+                <div class="customer-auth-links ms-3"><a href="@Url.Action("Login", "Account")">Đăng nhập</a><span aria-disabled="true" title="Chức năng chưa khả dụng">Đăng ký</span></div>
+            }
         </div>
     </div>
 </header>
