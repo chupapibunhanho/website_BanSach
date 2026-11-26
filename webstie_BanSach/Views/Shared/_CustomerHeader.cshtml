@@ -1,0 +1,26 @@
+@{
+    var action = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+    var controller = (ViewContext.RouteData.Values["controller"] ?? "").ToString();
+    var isHome = controller.Equals("Home", StringComparison.OrdinalIgnoreCase) && action.Equals("Index", StringComparison.OrdinalIgnoreCase);
+}
+<header class="customer-header">
+    <div class="container customer-header__inner py-2">
+        <a class="customer-brand" href="@Url.Action("Index", "Home")">Bookstore</a>
+        @* Các điều khiển chưa có backend sẽ được kết nối ở giai đoạn tương ứng. *@
+        <div class="customer-search" role="search" aria-label="Tìm kiếm sách">
+            <div class="input-group">
+                <input type="search" name="q" class="form-control" placeholder="Tìm sách, tác giả, ISBN..." aria-label="Tìm sách" disabled />
+                <button class="btn btn-primary" type="button" aria-label="Tìm kiếm" title="Chức năng tìm kiếm chưa triển khai" disabled><i class="bi bi-search" aria-hidden="true"></i></button>
+            </div>
+        </div>
+        <div class="customer-header__right d-flex align-items-center">
+            <nav class="customer-nav d-none d-md-flex" aria-label="Điều hướng chính">
+                <a class="nav-link @(isHome ? "active" : "")" href="@Url.Action("Index", "Home")">TRANG CHỦ</a>
+                <button class="nav-link" type="button" title="Danh mục chưa triển khai" disabled>DANH MỤC</button>
+            </nav>
+            <button class="customer-icon btn btn-link ms-3" type="button" aria-label="Giỏ hàng" title="Giỏ hàng chưa triển khai" disabled><i class="bi bi-cart" aria-hidden="true"></i></button>
+            <button class="customer-icon btn btn-link ms-3" type="button" aria-label="Yêu thích" title="Yêu thích chưa triển khai" disabled><i class="bi bi-heart" aria-hidden="true"></i></button>
+            <button class="btn customer-user-toggle ms-3" type="button" aria-label="Tài khoản" title="Tài khoản chưa triển khai" disabled><i class="bi bi-person-circle" aria-hidden="true"></i></button>
+        </div>
+    </div>
+</header>
