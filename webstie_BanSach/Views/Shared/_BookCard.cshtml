@@ -6,9 +6,17 @@
     var emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
     var fallback = Url.Content("~/Content/Images/default-book.jpg");
     var image = string.IsNullOrWhiteSpace(Model.CoverUrl) ? fallback : Url.Content(Model.CoverUrl);
+    var now = DateTime.UtcNow;
+    var isNew = Model.CreatedAtUtc <= now && Model.CreatedAtUtc >= now.AddDays(-7);
 }
 <div class="book-card card h-100 position-relative" data-book-id="@Model.BookId">
-    <img src="@image" data-fallback="@fallback" class="card-img-top book-card__img" alt="@Model.Title" />
+    <div class="book-card__cover">
+        <img src="@image" data-fallback="@fallback" class="card-img-top book-card__img" alt="@Model.Title" />
+        <div class="book-card__badges">
+            @if (Model.SalesRank.HasValue && Model.SalesRank.Value <= 3) { <span class="book-badge book-badge--top">TOP @Model.SalesRank</span> }
+            @if (isNew) { <span class="book-badge book-badge--new">NEW</span> }
+        </div>
+    </div>
     <div class="card-body d-flex flex-column">
         <h5 class="card-title mb-1" title="@Model.Title">@Model.Title</h5>
         <div class="book-meta mb-1"><span class="book-rating" aria-label="@(average > 0 ? String.Format("Đánh giá {0:0.0} trên 5 sao", average) : "Chưa có đánh giá")">
@@ -17,6 +25,11 @@
             @for (var i = 0; i < emptyStars; i++) { <i class="bi bi-star" aria-hidden="true"></i> }
         </span></div>
         <div class="price mb-3">@String.Format("{0:N0} ₫", Model.Price)</div>
+        @if (Model.SoldCount.HasValue) { <div class="book-card__sales">Đã bán @String.Format("{0:N0}", Model.SoldCount.Value)</div> }
+        <div class="book-card__stock">
+            @if (Model.Stock <= 0) { <span class="book-stock book-stock--out">Hết hàng</span> }
+            else if (Model.Stock <= 5) { <span class="book-stock book-stock--low">Sắp hết hàng</span> }
+        </div>
     </div>
     <div class="mt-auto card-actions" role="group" aria-label="Hành động sản phẩm" style="padding: 0.75rem;">
         <button type="button" class="btn btn-sm btn-add-to-cart" data-book-id="@Model.BookId" data-stock="@Model.Stock" title="@(Model.Stock <= 0 ? "Hết hàng" : "Giỏ hàng chưa triển khai")" disabled>

@@ -4,5 +4,7 @@ namespace webstie_BanSach.Models
     {
         public double AverageRating { get; set; }
         public int RatingCount { get; set; }
+        public long? SoldCount { get; set; }
+        public int? SalesRank { get; set; }
     }
 }

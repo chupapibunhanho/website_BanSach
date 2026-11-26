@@ -19,13 +19,24 @@ namespace webstie_BanSach.Controllers
             {
                 var top = (from item in db.OrderItems
                            join order in db.Orders on item.OrderId equals order.OrderId
-                           where order.StatusCode == "COMPLETED"
+                           join book in db.Books on item.BookId equals book.BookId
+                           where order.StatusCode == "COMPLETED" && book.Active && !book.IsDeleted
                            group item by item.BookId into items
-                           orderby items.Sum(x => (int?)x.Quantity) descending
-                           select items.Key).Take(10).ToList();
-                var books = db.Books.Where(b => top.Contains(b.BookId) && !b.IsDeleted && b.Active).ToList();
+                           let total = items.Sum(x => (long)x.Quantity)
+                           orderby total descending, items.Key descending
+                           select new { BookId = items.Key, Total = total }).Take(10).ToList();
+                var ids = top.Select(x => x.BookId).ToList();
+                var books = db.Books.Where(b => ids.Contains(b.BookId) && !b.IsDeleted && b.Active).ToList();
+                var rankedBooks = top.Select((entry, index) => new { entry.BookId, entry.Total, Rank = index + 1 })
+                    .ToDictionary(entry => entry.BookId);
+                foreach (var book in books)
+                {
+                    var ranking = rankedBooks[book.BookId];
+                    book.SoldCount = ranking.Total;
+                    book.SalesRank = ranking.Rank;
+                }
                 ApplyRatings(db, books);
-                return PartialView("Partials/_BestSellersList", books.OrderBy(b => top.IndexOf(b.BookId)).ToList());
+                return PartialView("Partials/_BestSellersList", books.OrderBy(b => b.SalesRank).ToList());
             }
         }
 
@@ -39,6 +50,7 @@ namespace webstie_BanSach.Controllers
                     .ThenByDescending(b => b.BookId)
                     .Take(10).ToList();
                 ApplyRatings(db, books);
+                ApplySoldCounts(db, books);
                 return PartialView("Partials/_NewestList", books);
             }
         }
@@ -69,6 +81,20 @@ namespace webstie_BanSach.Controllers
                     book.RatingCount = rating.Count;
                 }
             }
+        }
+
+        private static void ApplySoldCounts(DatabaseDataContext db, List<Book> books)
+        {
+            if (books.Count == 0) return;
+            var ids = books.Select(b => b.BookId).ToList();
+            var totals = (from item in db.OrderItems
+                          join order in db.Orders on item.OrderId equals order.OrderId
+                          where order.StatusCode == "COMPLETED" && ids.Contains(item.BookId)
+                          group item by item.BookId into items
+                          select new { BookId = items.Key, Total = items.Sum(x => (long)x.Quantity) })
+                         .ToDictionary(x => x.BookId, x => x.Total);
+            foreach (var book in books)
+                book.SoldCount = totals.TryGetValue(book.BookId, out var total) ? total : 0;
         }
 
         public ActionResult Index()
